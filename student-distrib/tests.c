@@ -155,13 +155,14 @@ int paging_init_test()
  * Coverage: i8259 double input
  * Files: i8259.c
  */
+/*
 int divide_test(){
 	TEST_HEADER;
 
     int a=4/0;
 	return PASS;
 }
-
+*/
 /* Checkpoint 2 tests */
 /* Checkpoint 3 tests */
 /* Checkpoint 4 tests */
