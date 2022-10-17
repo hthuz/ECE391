@@ -101,17 +101,36 @@ int idt_test_totally(){
 int paging_init_test()
 {
 	int i;
-	int* addr;
-	int value;
+	char* addr;
+	char value;
 
 	// test video memory
-	addr = (int*) VID_MEM_START;
+	addr = (char*) VID_MEM_START;
+	value = *addr;
+
+	addr = (char*) (VID_MEM_START + P_4K_SIZE  - 1);
+	printf("memory video end addr is %x\n", addr);
 	value = *addr;
 
 	// test kernel memory
-	addr = (int*) KERNEL_ADDR;
+	addr = (char*) KERNEL_ADDR;
 	value = *addr;
 
+	addr = (char*) KERNEL_ADDR;
+	printf("kernel memory end address is %x\n",addr);
+	value = *addr;
+
+	// test present
+	if(p_dir[0].present == 0)
+	{
+		printf("directory entry 0 not present!\n");
+		return FAIL;
+	}
+	if(p_table[PTE_INDEX(VID_MEM_START)].present == 0)
+	{
+		printf("video memory table not present!\n");
+		return FAIL;
+	}
 
 
 	// print to see values of directory and table
