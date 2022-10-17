@@ -11,7 +11,6 @@
 .globl tss, tss_desc_ptr, ldt, ldt_desc_ptr
 .globl gdt_ptr
 .globl idt_desc_ptr, idt
-.globl gdt_desc_ptr # GDT pointer
 
 .align 4
 
@@ -94,13 +93,6 @@ ldt_bottom:
 
 .align 4
     .word 0 # Padding
-
-# Added GDT descriptor pointer, which is used by LGDT in boot.S
-# Basically a copy of the code for idt_desc_ptr below 
-gdt_desc_ptr:
-    .word gdt_bottom - gdt - 1      # first 2 bytes store size of gdt - 1
-    .long gdt                       # next 4 bytes store beginning of gdt 
-
 idt_desc_ptr:
     .word idt_bottom - idt - 1
     .long idt
@@ -114,3 +106,8 @@ _idt:
     .endr
 
 idt_bottom:
+
+
+gdt_desc:
+    .word gdt_bottom-gdt-1
+    .long gdt

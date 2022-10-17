@@ -1,6 +1,7 @@
 #include "tests.h"
 #include "x86_desc.h"
 #include "lib.h"
+#include "keyboard.h"
 
 #define PASS 1
 #define FAIL 0
@@ -41,8 +42,8 @@ int idt_test(){
 			result = FAIL;
 		}
 	}
-
 	return result;
+	while(1);
 }
 
 // add more tests here
