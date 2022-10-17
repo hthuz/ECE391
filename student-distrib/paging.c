@@ -5,6 +5,7 @@
 
 #include "paging.h"
 #include "lib.h"
+#include "types.h"
 
 pde_t p_dir[PDE_NUM] __attribute__((aligned (P_4K_SIZE)));
 pte_t p_table[PTE_NUM] __attribute__((aligned (P_4K_SIZE)));
@@ -60,7 +61,7 @@ char paging_init()
   // for(i = VID_MEM_START; i < VID_MEM_END; i = i + P_4K_SIZE )
   // PTE_INDEX(i) is always 0 for video memory so no loop required
   p_dir[0].present = 1;
-  p_dir[0].base_addr = (int)(p_table >> 12); // p_table is 4k aligned. the address is 
+  p_dir[0].base_addr = (((int)p_table) >> 12); // p_table is 4k aligned. the address is 
                                                           // bound to be a multiple of 4k(2^12)
                                                           // so lower 12 bits are not required
 
@@ -85,11 +86,17 @@ char paging_init()
   return 1;
 }
 
-
-int main()
-{
-
-  int addr = &p_table;
-  printf("addr is %x\n",addr);
-
-}
+/*
+ *
+ *int main()
+ *{
+ *  int a;
+ *  paging_init();
+ *  for(a = 0; a < PTE_NUM; a++)
+ *  {
+ *    printf("%d, %d\n",a, p_table[a].base_addr);
+ *  }
+ *
+ *
+ *}
+ */
