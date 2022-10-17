@@ -156,11 +156,15 @@ int paging_init_test()
  * Files: i8259.c
  */
 /*
-int divide_test(){
-	TEST_HEADER;
-
-    int a=4/0;
-	return PASS;
+int mult_test(){
+	int* addr;
+	int value;
+	addr = (int*)(VID_MEM_START + P_4K_SIZE - 1);
+	value - *addr;
+	int a=4;
+	int b=0;
+	int c=a/b;
+	return a;
 }
 */
 /* Checkpoint 2 tests */
