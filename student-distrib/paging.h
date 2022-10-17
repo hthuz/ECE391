@@ -4,11 +4,19 @@
 
 #define PDE_NUM 1024
 #define PTE_NUM 1024
+#define VID_MEM_START 0x000B8000
+#define VID_MEM_END 0x000C0000
+#define P_4K_SIZE (4*1024)
+#define P_4M_SIZE (4*1024*1024)
 #define KERNEL_ADDR (4*1024*1024)  //0x00400000 starting address of kernel memory
+
+#define PDE_INDEX(vir_mem) (( (vir_mem) & 0xFFC00000) >> 22)
+#define PTE_INDEX(vir_mem)  ( ((vir_mem) & 0x003FF000) >> 12)
+#define P_OFFSET(vir_mem) ( (vir_mem) & 0x00000FFF)
 
 
 // struct of 4kB page directiry entry
-j/ refer to IA32-ref-manual-vol-3 page 3-24
+// refer to IA32-ref-manual-vol-3 page 3-24
 // size: 32bits
 struct pde_t
 {
