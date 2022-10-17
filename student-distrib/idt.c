@@ -74,82 +74,102 @@ idt_fill(){
  */
 
 void idt_0(){
+    cli();
     printf("divide_error");
     while(1);
 }
 void idt_1(){
+    cli();
     printf("debug error");
     while(1);
 }
 void idt_2(){
+    cli();
     printf("nmi error");
     while(1);
 }
 void idt_3(){
+    cli();
     printf("breakpoint error");
     while(1);
 }
 void idt_4(){
+    cli();
     printf("overflow error");
     while(1);
 }
 void idt_5(){
+    cli();
     printf("bound_range_exceeded error");
     while(1);
 }
 void idt_6(){
+    cli();
     printf("invalid_opcode error");
     while(1);
 }
 void idt_7(){
+    cli();
     printf("device_not_available error");
     while(1);
 }
 void idt_8(){
+    cli();
     printf("double_fault error");
     while(1);
 }
 void idt_9(){
+    cli();
     printf("coprocessor_segment_overrun error");
     while(1);
 }
 void idt_10(){
+    cli();
     printf("invalid_TSS error");
     while(1);
 }
 void idt_11(){
+    cli();
     printf("segment_not_present error");
     while(1);
 }
 void idt_12(){
+    cli();
     printf("stack_segment_fault error");
     while(1);
 }
 void idt_13(){
+    cli();
     printf("general_protection_fault error");
     while(1);
 }
 void idt_14(){
+    cli();
     printf("page_fault error");
     while(1);
 }
 void idt_15(){
+    cli();
     printf("spurious_interrupt_bug error");
     while(1);
 }
 void idt_16(){
+    cli();
     printf("coprocessor_error error");
     while(1);
 }
 void idt_17(){
+    cli();
     printf("alignment_check error");
     while(1);
 }
 void idt_18(){
+    cli();
     printf("machine_check error");
     while(1);
 }
 void idt_19(){
+    cli();
     printf("simd_coprocessor_error error");
     while(1);
 }

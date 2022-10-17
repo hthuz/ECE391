@@ -7,7 +7,6 @@
 
 #define PASS 1
 #define FAIL 0
-#define KEYBOARD_IDT_FAIL 2
 
 /* format these macros as you see fit */
 #define TEST_HEADER 	\
@@ -156,19 +155,11 @@ int paging_init_test()
  * Coverage: i8259 double input
  * Files: i8259.c
  */
-int i8259_test(){
+int divide_test(){
 	TEST_HEADER;
-	int result = PASS;
-	printf("initial master_mask=%u   \n",get_master_mask());
-	printf("inital slave_mask=%u    \n",get_slave_mask());
-	enable_irq(8);
-	printf(" enable-8 master_mask=%u    \n",get_master_mask());
-	printf(" enable-8 slave_mask=%u     \n",get_slave_mask());
-	disable_irq(1);
-	printf(" disable-1 master_mask=%u    \n",get_master_mask());
-	printf(" disable-1 slave_mask=%u     \n",get_slave_mask());
-	return result;
-	while(1);
+
+    int a=4/0;
+	return PASS;
 }
 
 /* Checkpoint 2 tests */
@@ -181,6 +172,7 @@ int i8259_test(){
 void launch_tests(){
 	//TEST_OUTPUT("idt_test", idt_test());
 	//TEST_OUTPUT("idt_test_totally", idt_test_totally());
-	TEST_OUTPUT("paging_init_test", paging_init_test());
+	//TEST_OUTPUT("divide test", divide_test());
+	//TEST_OUTPUT("paging_init_test", paging_init_test());
 	// launch your tests here
 }
