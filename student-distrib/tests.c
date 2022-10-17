@@ -3,6 +3,7 @@
 #include "lib.h"
 #include "keyboard.h"
 #include "i8259.h"
+#include "paging.h"
 
 #define PASS 1
 #define FAIL 0
@@ -89,6 +90,43 @@ int idt_test_totally(){
 	while(1);
 }
 
+/* paging_init_test
+ * DESCRIPTIONS: test paging initialize
+ * INPUTS: none
+ * OUTPUTS: none
+ * RETURN VALUES: PASS if no problem
+ *          	  FAIL otherwise  
+ * SIDE EFFECTS: none
+ */
+int paging_init_test()
+{
+	int i;
+	int* addr;
+	int value;
+
+	// test video memory
+	addr = VID_MEM_START;
+	value = *addr;
+
+	// test kernel memory
+	addr = KERNEL_ADDR;
+	value = *addr;
+
+
+
+	// print to see values of directory and table
+	printf("Page Directroy as follows: (index, base_addr\n");
+	for(i = 0; i < PDE_NUM; i++)
+  	{
+    	printf("%d  , %d  \n",i, p_dir[i].base_addr);
+  	}	
+  	printf("Page table as follows:(index,base_addr)\n");
+  	for(i = 0; i < PTE_NUM; i++)
+  	{
+    	printf("%d  , %d  \n ", i, p_table[a].base_addr);
+  	}
+}
+
 
 /* i8259 Test
  * 
@@ -123,6 +161,6 @@ int i8259_test(){
 void launch_tests(){
 	//TEST_OUTPUT("idt_test", idt_test());
 	//TEST_OUTPUT("idt_test_totally", idt_test_totally());
-	TEST_OUTPUT("i8259_test", i8259_test());
+	TEST_OUTPUT("paging_init_test", paging_init_test());
 	// launch your tests here
 }
