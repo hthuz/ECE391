@@ -19,7 +19,7 @@ idt_fill(){
     for (i=0;i<=NUM_VEC;i++){
         idt[i].seg_selector=KERNEL_CS;
         idt[i].reserved4 =0;
-        idt[i].reserved3 =0;    // not sure
+        idt[i].reserved3 =1;    // not sure
         idt[i].reserved2 =1;
         idt[i].reserved1 =1;    
         idt[i].size      =1;    // size is 32 bits
@@ -35,8 +35,9 @@ idt_fill(){
     idt[keyboard_port].present=1;      
     idt[rtc_port].present=1;
     idt[systemcall_port].present=1;
-    idt[keyboard_port].reserved3=1;
-    idt[rtc_port].reserved3=1;
+
+    idt[keyboard_port].reserved3=0;
+    idt[rtc_port].reserved3=0;
     idt[systemcall_port].dpl=3;
     SET_IDT_ENTRY(idt[0],idt_0);    //divide_error
     SET_IDT_ENTRY(idt[1],idt_1);    //debug
@@ -59,7 +60,7 @@ idt_fill(){
     SET_IDT_ENTRY(idt[18],idt_18);  //machine_check
     SET_IDT_ENTRY(idt[19],idt_19);  //simd_coprocessor_error
     SET_IDT_ENTRY(idt[keyboard_port],keyboard_a_handler);
-//  SET_IDT_ENTRY(idt[40],RTC_WRAPPER);
+    SET_IDT_ENTRY(idt[40],rtc_a_handler);
 //  SET_IDT_ENTRY(idt[128],idt_128);
 }
 

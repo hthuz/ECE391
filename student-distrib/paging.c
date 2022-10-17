@@ -66,12 +66,10 @@ char paging_init()
                                                           // so lower 12 bits are not required
 
   // set up PDE for video memory
-  for(i = VID_MEM_START; i < VID_MEM_END; i = i + P_4K_SIZE)
-  {
-    p_table[PTE_INDEX(i)].present = 1;
-    p_table[PTE_INDEX(i)].cache_dis = 0; // cache_disable 0 for video memory
-    p_table[PTE_INDEX(i)].base_addr = i >> 12;  // 12 is same reason as setting PTE
-  }
+  p_table[PTE_INDEX(VID_MEM_START)].base_addr = VID_MEM_START >> 12;  // page is 4k aligned, 
+                                                                        // the address is multiple of 4k
+                                                                        // so lower 12 bits not required
+  p_table[PTE_INDEX(VID_MEM_START)].present = 1;
 
 
   // paging for kernel memory
@@ -80,23 +78,45 @@ char paging_init()
   p_dir[PDE_INDEX(P_4M_SIZE)].cache_dis = 1; // cache disbale for kernel
   p_dir[PDE_INDEX(P_4M_SIZE)].page_size = 1; // 4MB page size
   p_dir[PDE_INDEX(P_4M_SIZE)].global_page = 1;  // global for kernel
-  p_dir[PDE_INDEX(P_4M_SIZE)].base_addr = P_4M_SIZE >> 12; // P_4M_SIZE is also start address
-                                                           // of kernel memory
+  p_dir[PDE_INDEX(P_4M_SIZE)].base_addr = (P_4M_SIZE >> 12); // P_4M_SIZE is also start address
+                                                             // of kernel memory 
+                                                             // also, 12 is the same reason as line 69
+
+  // printf("starting asm\n");
+  // enable paging  
+  // according of OSDev, should set cr3 first, then cr4, cr0
+  asm volatile (
+    "movl %%ebx, %%cr3;"               // cr0 contains address of page directory
+
+    "movl %%cr4, %%eax;"
+    "orl $0x00000010, %%eax;"
+    "movl %%eax, %%cr4;"                    // PSE (bit 4 of CR4) set to enable mixture of 4K and 4M
+
+    "movl %%cr0, %%eax;"
+    "orl $0x80000000, %%eax;"    //set bit 31
+    "movl %%eax, %%cr0;"
+
+    :
+    :"b"(p_dir)  //input, 
+    :"%eax"
+  );
 
   return 1;
 }
 
-/*
- *
- *int main()
- *{
- *  int a;
- *  paging_init();
- *  for(a = 0; a < PTE_NUM; a++)
- *  {
- *    printf("%d, %d\n",a, p_table[a].base_addr);
- *  }
- *
- *
- *}
- */
+
+// int main()
+// {
+//   int a;
+//   paging_init();
+
+//   for(a = 0; a < PDE_NUM; a++)
+//   {
+//     printf("%d, %d\n",a, p_dir[a].base_addr);
+//   }
+//   printf("Page table as follows\n");
+//   for(a = 0; a < PTE_NUM; a++)
+//   {
+//     printf("%d, %d\n ", a, p_table[a].base_addr);
+//   }
+// }

@@ -58,6 +58,6 @@ typedef struct pde_t pde_t;
 typedef struct pte_t pte_t;
 
 
-
+char paging_init();
 
 #endif

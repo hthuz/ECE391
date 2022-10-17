@@ -17,23 +17,11 @@
 #define RTC_RATE  0x02
 #define IRQ8  8
 
-typedef struct rtc_use
-{
-    int32_t id;
-}rtc_t;
 
 
 extern void rtc_init();
 
 extern void rtc_interrupt();
 
-extern int32_t rtc_set_rate(int32_t frequence);
 
-extern int32_t rtc_open(const uint8_t* filename);
-
-extern int32_t rtc_close(int32_t fd);
-
-extern int32_t rtc_read(int32_t fd, void* buf, int32_t nbytes);
-
-extern int32_t rtc_write(int32_t fd, const void * buf, int32_t nbytes);
 #endif

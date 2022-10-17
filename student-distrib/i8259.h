@@ -44,4 +44,8 @@ void disable_irq(uint32_t irq_num);
 /* Send end-of-interrupt signal for the specified IRQ */
 void send_eoi(uint32_t irq_num);
 
+/* used for test*/
+uint8_t get_master_mask();
+uint8_t get_slave_mask();
+
 #endif /* _I8259_H */

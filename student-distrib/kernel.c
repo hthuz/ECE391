@@ -10,8 +10,9 @@
 #include "tests.h"
 
 #include "keyboard.h"
+#include "rtc.h"
 #include "idt.h"
-
+#include "paging.h"
 #define RUN_TESTS
 
 /* Macros. */
@@ -144,6 +145,8 @@ void entry(unsigned long magic, unsigned long addr) {
     /* Init the PIC */
     i8259_init();
     initialize_keyboard();
+    rtc_init();
+    paging_init();
     /* Initialize devices, memory, filesystem, enable device interrupts on the
      * PIC, any other initialization stuff... */
 
@@ -154,9 +157,10 @@ void entry(unsigned long magic, unsigned long addr) {
     //printf("Enabling Interrupts\n");
     sti();
 
+
 #ifdef RUN_TESTS
     /* Run tests */
-    launch_tests();
+    // launch_tests();
 #endif
     /* Execute the first program ("shell") ... */
 

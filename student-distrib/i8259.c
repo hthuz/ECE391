@@ -36,7 +36,7 @@ void i8259_init(void) {
 
     outb(master_mask,MASTER_8259_DATA);       
     outb(slave_mask, SLAVE_8259_DATA);
-
+    enable_irq(2);  // open the master irq2 so that the slave could work
 }
 
 
@@ -56,6 +56,9 @@ void enable_irq(uint32_t irq_num) {
         outb(master_mask,MASTER_8259_DATA);
     }
     else if (irq_num & eight){  //slave
+        master_mask= ( master_mask | 0x02) ;
+        outb(master_mask,MASTER_8259_DATA);
+
         uint8_t mymask= ( 0x80 >>(15-irq_num) ); //0x80=1000 0000,magic number 15 for calculation of slave
         mymask=~mymask;
         slave_mask= ( slave_mask & mymask );
@@ -78,6 +81,7 @@ void disable_irq(uint32_t irq_num) {
         outb(master_mask,MASTER_8259_DATA);
     }
     else if (irq_num & eight){  //slave
+
         uint8_t mymask= ( 0x80>>(15-irq_num) ); //0x80=1000 0000,magic number 15 for calculation of slave
         slave_mask= ( slave_mask | mymask );
         outb(slave_mask,SLAVE_8259_DATA);
@@ -102,3 +106,17 @@ void send_eoi(uint32_t irq_num) {
 	}
 }
 
+/* 
+ * get_master/slave_mask
+ * DESCRIPTION:  get the local variable to test
+ * INPUTS: none
+ * OUTPUTS: none
+ * RETURN VALUE: master_mask/slave_mask
+ * SIDE EFFECT: none
+ */
+uint8_t get_master_mask(){
+    return master_mask;
+}
+uint8_t get_slave_mask(){
+    return slave_mask;
+}
