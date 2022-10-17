@@ -105,11 +105,11 @@ int paging_init_test()
 	int value;
 
 	// test video memory
-	addr = VID_MEM_START;
+	addr = (int*) VID_MEM_START;
 	value = *addr;
 
 	// test kernel memory
-	addr = KERNEL_ADDR;
+	addr = (int*) KERNEL_ADDR;
 	value = *addr;
 
 
@@ -123,8 +123,9 @@ int paging_init_test()
   	printf("Page table as follows:(index,base_addr)\n");
   	for(i = 0; i < PTE_NUM; i++)
   	{
-    	printf("%d  , %d  \n ", i, p_table[a].base_addr);
+    	printf("%d  , %d  \n ", i, p_table[i].base_addr);
   	}
+	return PASS;
 }
 
 
