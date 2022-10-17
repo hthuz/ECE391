@@ -57,6 +57,8 @@ struct pte_t
 typedef struct pde_t pde_t;
 typedef struct pte_t pte_t;
 
+extern pde_t p_dir[PDE_NUM] __attribute__((aligned (P_4K_SIZE)));
+extern pte_t p_table[PTE_NUM] __attribute__((aligned (P_4K_SIZE)));
 
 char paging_init();
 
