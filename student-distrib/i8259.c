@@ -56,8 +56,8 @@ void enable_irq(uint32_t irq_num) {
         outb(master_mask,MASTER_8259_DATA);
     }
     else if (irq_num & eight){  //slave
-        master_mask= ( master_mask | 0x02) ;
-        outb(master_mask,MASTER_8259_DATA);
+        //master_mask= ( master_mask | 0x02) ;
+        //outb(master_mask,MASTER_8259_DATA);
 
         uint8_t mymask= ( 0x80 >>(15-irq_num) ); //0x80=1000 0000,magic number 15 for calculation of slave
         mymask=~mymask;
