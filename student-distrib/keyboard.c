@@ -65,8 +65,22 @@ void keyboard_c_handler()
 	// Put the result into buffer  
 	if(kb_buf_index != KB_BUF_SIZE - 1 && result != 0)
 	{
-		kb_buf[kb_buf_index] = result;
-		kb_buf_index++;
+		// if not backspace, add it to buffer
+		if(result != '\b')
+		{
+			kb_buf[kb_buf_index] = result;
+			kb_buf_index++;
+		}
+		// else, remove one character from buffer
+		else
+		{
+			if (kb_buf_index != 0)
+			{
+				kb_buf_index--;
+				kb_buf[kb_buf_index] = '\0';
+			}
+		}
+
 	}
 
 	// if result=0, you will print a blank
