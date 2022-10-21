@@ -14,14 +14,25 @@ unsigned char scancode[80] =
   'm',  ',', '.', '/',   0,  0 ,  0 , ' ',  0 ,  0 
 };
 
-#define left_ctrl 0x1D
-#define right_ctrl 0x1D   //generate two interrupts, first is 0xE0 and second is 0x1D
-#define left_shift 0x2A
-#define right_shift 0x36
-#define left_alt 0x38
-#define right_alt 0x38   // generate two interrupts, first is 0xE0 and second is 0x38
 
-#define capslock 0x3A
+#define CTRL 0x1D   //for right ctrl, generate two interrupts, first is 0xE0 and second is 0x1D
+#define REL_CTRL 0x9D
+
+#define LEFT_SHIFT 0x2A
+#define RIGHT_SHIFT 0x36
+#define REL_LEFT_SHIFT 0xAA
+#define REL_RIGHT_SHIFT 0xB6
+
+#define ALT 0x38 //for right alt generate two interrupts, first is 0xE0 and second is 0x38
+#define REL_ALT 0xB8
+
+#define CAPSLOCK 0x3A
+#define EXT_BYTE 0xE0   
+#define CAPITAL_OFFESET 0x20     //capital is 0x20 smaller in ASCII
+
+int ctrl_pressed = 0;
+int shift_pressed = 0;
+int alt_pressed = 0;
 
 
 // The size of keyboard buffer is at most 128 bytes
@@ -55,11 +66,42 @@ void keyboard_c_handler()
 	unsigned char result;
 
 	unsigned char c = inb(KEY_PORT);
+
+	// if get EXT_BYTE, read scancode
+	if ( c == EXT_BYTE)
+	{
+		c = inb(KEY_PORT);
+	}
+
+	// if get CTRL
+	if (c == CTRL)
+		ctrl_pressed = 1;
+	if (c == REL_CTRL)
+		ctrl_pressed = 0;
+
+	//CTRL + L will clean the screen
+	// 0x26: scancode for L
+	if (ctrl_pressed == 1 && c == 0x26)
+	{
+		clear();
+		memset(kb_buf,'\0',KB_BUF_SIZE);
+		kb_buf_index = 0;
+		send_eoi(KEY_IRQ);
+		return;
+	}
+
+	result = scancode[c];
+
 	if (c>=80) {
 		send_eoi(KEY_IRQ);	// if it is outside the scancode table, ignore it 
 		return;
 	}
-	result = scancode[c];
+	//	int kb_status;
+	// outb(0xF0,KEY_PORT);
+	// outb(0,KEY_PORT);
+	// kb_status = inb(KEY_PORT);
+	// kb_status = inb(KEY_PORT);
+	// printf("key borad status: %x\n",kb_status);
 
 	// If kb buffer doesn't overflow
 	// Put the result into buffer  
