@@ -15,6 +15,18 @@ unsigned char scancode[80] =
 };
 
 
+unsigned char capital_scancode[80] = 
+{
+	0,    0, '!', '@', '#', '$', '%', '^', '&', '*', 
+  '(',  ')', '_', '+','\b',   0, 'Q', 'W', 'E', 'R', 
+  'T',  'Y', 'U', 'I', 'O', 'P', '{', '}','\n',  0 , 
+  'A',  'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':',    
+ '\"',  '~',  0 , '|', 'Z', 'X', 'C', 'V', 'B', 'N', 
+  'M',  '<', '>', '?',   0,  0 ,  0 , ' ',  0 ,  0 
+};
+      
+
+
 #define CTRL 0x1D   //for right ctrl, generate two interrupts, first is 0xE0 and second is 0x1D
 #define REL_CTRL 0x9D
 
@@ -28,7 +40,6 @@ unsigned char scancode[80] =
 
 #define CAPSLOCK 0x3A
 #define EXT_BYTE 0xE0   
-#define CAPITAL_OFFESET 0x20     //capital is 0x20 smaller in ASCII
 
 int ctrl_pressed = 0;
 int shift_pressed = 0;
@@ -78,6 +89,18 @@ void keyboard_c_handler()
 		ctrl_pressed = 1;
 	if (c == REL_CTRL)
 		ctrl_pressed = 0;
+	// if get ALT
+	if (c == ALT)
+		alt_pressed = 1;
+	if (c == REL_ALT)
+		alt_pressed = 0;
+	// if get SHIFT
+	if (c == LEFT_SHIFT || c == RIGHT_SHIFT)
+		shift_pressed = 1;
+	if (c == REL_LEFT_SHIFT || c == REL_RIGHT_SHIFT)
+		shift_pressed = 0;
+
+	
 
 	//CTRL + L will clean the screen
 	// 0x26: scancode for L
@@ -90,12 +113,18 @@ void keyboard_c_handler()
 		return;
 	}
 
-	result = scancode[c];
-
+	// print the character
 	if (c>=80) {
 		send_eoi(KEY_IRQ);	// if it is outside the scancode table, ignore it 
 		return;
 	}
+
+	// if shift is pressed, use capital result  
+	if(shift_pressed == 1)
+		result = capital_scancode[c];
+	else
+		result = scancode[c];
+
 	//	int kb_status;
 	// outb(0xF0,KEY_PORT);
 	// outb(0,KEY_PORT);

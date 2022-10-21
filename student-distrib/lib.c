@@ -191,7 +191,10 @@ void putc(uint8_t c) {
             screen_y--;
         }
     }
-    
+    else if (c == '\t')
+    {
+        return;
+    }
     else {
         *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = c;
         *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB;
@@ -267,7 +270,7 @@ uint32_t strlen(const int8_t* s) {
     while (s[len] != '\0')
         len++;
     return len;
-}
+} 
 
 /* void* memset(void* s, int32_t c, uint32_t n);
  * Inputs:    void* s = pointer to memory
