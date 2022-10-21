@@ -13,6 +13,7 @@
 #include "rtc.h"
 #include "idt.h"
 #include "paging.h"
+#include "file.h"
 #define RUN_TESTS
 
 /* Macros. */
@@ -56,6 +57,7 @@ void entry(unsigned long magic, unsigned long addr) {
         int mod_count = 0;
         int i;
         module_t* mod = (module_t*)mbi->mods_addr;
+        fs_init_address(mod->mod_start);
         while (mod_count < mbi->mods_count) {
             printf("Module %d loaded at address: 0x%#x\n", mod_count, (unsigned int)mod->mod_start);
             printf("Module %d ends at address: 0x%#x\n", mod_count, (unsigned int)mod->mod_end);
@@ -139,7 +141,7 @@ void entry(unsigned long magic, unsigned long addr) {
         tss.esp0 = 0x800000;
         ltr(KERNEL_TSS);
     }
-
+    //printf("kkk");
     idt_fill();
     //printf("come here");
     /* Init the PIC */
@@ -147,6 +149,10 @@ void entry(unsigned long magic, unsigned long addr) {
     initialize_keyboard();
     rtc_init();
     paging_init();
+    //file_system_initial();
+    int result;
+    result=test_file();
+    printf("result is:%d",result);
     /* Initialize devices, memory, filesystem, enable device interrupts on the
      * PIC, any other initialization stuff... */
 

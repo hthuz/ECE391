@@ -64,6 +64,7 @@ void rtc_interrupt()
     //printf("come here");
     // increse the counter
     rtc_counter ++;
+    //if (rtc_counter==0) test_interrupts();
     //test_interrupts();
     // throwaway the value of rtcc.
     outb(0x0C,RTC_PORT); 
