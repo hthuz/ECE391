@@ -13,4 +13,7 @@ void initialize_keyboard(void);
 // handler c function - keyboard interrupt
 void keyboard_c_handler(void);
 
+extern unsigned char kb_buf[KB_BUF_SIZE];
+extern int kb_buf_index;
+
 #endif /* _KEYBOARD_H*/

@@ -29,6 +29,14 @@ void test_interrupts(void);
 int32_t bad_userspace_addr(const void* addr, int32_t len);
 int32_t safe_strncpy(int8_t* dest, const int8_t* src, int32_t n);
 
+#define VIDEO       0xB8000
+#define NUM_COLS    80
+#define NUM_ROWS    25
+#define ATTRIB      0x7
+
+extern int screen_x;
+extern int screen_y;
+
 /* Port read functions */
 /* Inb reads a byte and returns its value as a zero-extended 32-bit
  * unsigned int */

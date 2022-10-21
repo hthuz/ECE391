@@ -68,6 +68,12 @@ void keyboard_c_handler()
 		// if not backspace, add it to buffer
 		if(result != '\b')
 		{
+			// if this line reaches end, automatic add new line
+			// but shouldn't be added to buffer as this may affect the complence of command
+			if(screen_x == NUM_COLS - 1)
+			{
+				putc('\n');
+			}
 			kb_buf[kb_buf_index] = result;
 			kb_buf_index++;
 		}
@@ -76,15 +82,27 @@ void keyboard_c_handler()
 		{
 			if (kb_buf_index != 0)
 			{
-				kb_buf_index--;
 				kb_buf[kb_buf_index] = '\0';
+				kb_buf_index--;
 			}
 		}
-
+		putc(result);				//else print it
 	}
 
+	// if kb buffer overflow, stop taking unless take enter or backspace  
+	if(kb_buf_index == KB_BUF_SIZE - 1)
+	{
+		if (result == '\b')
+		{
+			kb_buf[kb_buf_index] = '\0';
+			kb_buf_index--;
+			putc(result);
+		}
+	}
+
+
 	// if result=0, you will print a blank
-	putc(result);				//else print it
+
 	send_eoi(KEY_IRQ);		// send the message of ending interrupt
 }
 

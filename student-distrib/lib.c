@@ -2,14 +2,14 @@
  * vim:ts=4 noexpandtab */
 
 #include "lib.h"
+#include "keyboard.h"
 
-#define VIDEO       0xB8000
-#define NUM_COLS    80
-#define NUM_ROWS    25
-#define ATTRIB      0x7
 
-static int screen_x;
-static int screen_y;
+
+int screen_x;
+int screen_y;
+int screen_x_before_enter;  // record screen x before enter. So that if you backspace after enter, go to correct place after 
+                            // this line is deleted
 static char* video_mem = (char *)VIDEO;
 
 /* void clear(void);
@@ -173,14 +173,22 @@ int32_t puts(int8_t* s) {
 void putc(uint8_t c) {
     if(c == '\n' || c == '\r') {
         screen_y++;
+        screen_x_before_enter = screen_x;
         screen_x = 0;
     }else if( c == '\b')
     {
+        // normal backspace
         if(screen_x != 0)
         {
             screen_x--;
             *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = ' ';
             *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB;        
+        }
+        // backspace when at start of line
+        if(screen_x == 0 && screen_y != 0 && kb_buf_index != 0)
+        {
+            screen_x = screen_x_before_enter;
+            screen_y--;
         }
     }
     
