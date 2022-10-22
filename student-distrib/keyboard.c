@@ -197,9 +197,10 @@ void keyboard_c_handler()
 		putc(result);
 
 		// scroll if needed
-		printf("<%d>",screen_y);
+	
 		if(screen_y == NUM_ROWS)
 		{
+			// printf("<start scroll>");
 			if (scroll_one_line() == -1)
 			{
 				printf("scroll error\n");
@@ -250,21 +251,24 @@ int is_alphabet(unsigned char scancode)
 
 int scroll_one_line()
 {
-	int numbytes_moved;
+	char* dest_mem;
+
 	// move memory starting frow second row to first row
-	printf("video_mem: %x ",video_mem);
-	printf("second_row: %x", video_mem + 2 * NUM_COLS);
-	numbytes_moved = memmove(video_mem,(uint8_t *)( video_mem + 2 * NUM_COLS), VIDEO_SIZE - NUM_COLS * 2);
-	if(numbytes_moved != VIDEO_SIZE - NUM_COLS * 2)
+	dest_mem = memmove(video_mem, (char *)( VIDEO + (NUM_COLS << 1 )), VIDEO_SIZE - (NUM_COLS << 1 ) );
+	if(dest_mem != video_mem)
 		return -1;
 
 	// set video memory of last row to empty
+	// TODO: probabilty keyboard buffer need to be cleaned as well?
 	int32_t i;
     for (i = 0; i < NUM_COLS; i++) {
-        *(uint8_t *)(video_mem + VIDEO_SIZE - NUM_COLS * 2 + (i << 1)) = ' ';
-        *(uint8_t *)(video_mem + VIDEO_SIZE - NUM_COLS * 2 + (i << 1) + 1) = ATTRIB;
+        *(uint8_t *)(video_mem + VIDEO_SIZE - (NUM_COLS << 1) + (i << 1)) = ' ';
+        *(uint8_t *)(video_mem + VIDEO_SIZE - (NUM_COLS << 1) + (i << 1) + 1) = ATTRIB;
     }
+	// reset position on screen
+	screen_x = 0;
     screen_y--;
+
 	return 0;
 }
 

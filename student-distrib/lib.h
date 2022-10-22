@@ -33,7 +33,7 @@ int32_t safe_strncpy(int8_t* dest, const int8_t* src, int32_t n);
 #define NUM_COLS    80
 #define NUM_ROWS    25
 #define ATTRIB      0x7
-#define VIDEO_SIZE  (NUM_COLS * NUM_ROWS * 2) // each location in pixel takes two bytes
+#define VIDEO_SIZE  ((NUM_COLS * NUM_ROWS) << 1) // each location in pixel takes two bytes
 
 extern int screen_x;
 extern int screen_y;

@@ -24,7 +24,7 @@ void clear(void) {
     }
     // reset x and y start point
     screen_x = 0;
-    screen_y = 23;
+    screen_y = 0;
 }
 
 /* Standard printf().
