@@ -46,6 +46,7 @@ int ctrl_pressed = 0;
 int shift_pressed = 0;
 int alt_pressed = 0;
 int capslock_on = 0;  // Assume capslock is off at the beginning
+int enter_pressed = 0;
 
 // The size of keyboard buffer is at most 128 bytes
 unsigned char kb_buf[KB_BUF_SIZE] = {'\0'};

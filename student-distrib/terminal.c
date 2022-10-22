@@ -40,18 +40,29 @@ int32_t terminal_close(int32_t fd)
 }
 
 
-// TODO: to complete the header
 /* terminal_read
  *   DESCRIPTION: copy from keyboard buffer to buf
                   only returns when enter key is pressed
- *   INPUTS:
+ *   INPUTS:  fd -- file descriptor
+              buf -- buffer  
+              nbytes -- number of bytes to read
  *   OUTPUTS: none
  *   RETURN VALUE: -1 if failure
  *                 number of bytes successfully copied if success
- *   SIDE EFFECTS:
+ *   SIDE EFFECTS: none
  */
 int32_t terminal_read(int32_t fd, void* buf, int32_t nbytes)
 {
+
+    // do nothing until enter is pressed
+    while(enter_pressed == 0);
+
+    int i;
+    for(i = 0; i < nbytes; i++)
+    {
+        buf[i] == kb_buf[i];
+    }
+
 
     return 0;
 }

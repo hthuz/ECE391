@@ -186,9 +186,11 @@ int terminal_test()
 {
 	TEST_HEADER;
 	int result = PASS;
+
 	char writestr[] = "This is STRING for testing terminal write\n";
 	int32_t fd = 3;
 	uint8_t* filename = 0;
+	char buf[KB_BUF_SIZE];
 	
 	terminal_open(filename);
 	if ( terminal_write(fd,writestr, strlen(writestr)) != strlen(writestr))
@@ -196,6 +198,12 @@ int terminal_test()
 		assertion_failure();
 		result = FAIL;
 	}
+	
+	// test termianl read
+	terminal_read(fd, buf, kb_buf_length);
+	terminal_write(fd, buf, kb_buf_length);
+
+
 	return result;
 	
 }
