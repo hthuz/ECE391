@@ -4,6 +4,7 @@
 #include "keyboard.h"
 #include "i8259.h"
 #include "paging.h"
+#include "terminal.h"
 
 #define PASS 1
 #define FAIL 0
@@ -168,6 +169,36 @@ int mult_test(){
 }
 */
 /* Checkpoint 2 tests */
+
+
+/* Termial Test
+ *
+ *   Asserts that terminal read and write works
+ *   INPUTS: none
+ *   OUTPUTS: PASS/FAIL
+ *   SIDE EFFECTS: None
+ *   Coverage: Terminal read, terminal write
+ *   Files: terminal.h/cs
+ */
+
+
+int terminal_test()
+{
+	TEST_HEADER;
+	int result = PASS;
+	char writestr[] = "This is STRING for testing terminal write\n";
+	int32_t fd = 3;
+	uint8_t* filename = 0;
+	
+	terminal_open(filename);
+	if ( terminal_write(fd,writestr, strlen(writestr)) != strlen(writestr))
+	{
+		assertion_failure();
+		result = FAIL;
+	}
+	return result;
+	
+}
 /* Checkpoint 3 tests */
 /* Checkpoint 4 tests */
 /* Checkpoint 5 tests */
@@ -179,5 +210,6 @@ void launch_tests(){
 	//TEST_OUTPUT("idt_test_totally", idt_test_totally());
 	//TEST_OUTPUT("divide test", divide_test());
 	//TEST_OUTPUT("paging_init_test", paging_init_test());
+	TEST_OUTPUT("terminal test", terminal_test());
 	// launch your tests here
 }
