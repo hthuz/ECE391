@@ -14,6 +14,6 @@ void initialize_keyboard(void);
 void keyboard_c_handler(void);
 
 extern unsigned char kb_buf[KB_BUF_SIZE];
-extern int kb_buf_index;
+extern int kb_buf_length;
 
 #endif /* _KEYBOARD_H*/

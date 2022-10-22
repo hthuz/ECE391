@@ -185,7 +185,7 @@ void putc(uint8_t c) {
             *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB;        
         }
         // backspace when at start of line
-        if(screen_x == 0 && screen_y != 0 && kb_buf_index != 0)
+        if(screen_x == 0 && screen_y != 0 && kb_buf_length != 0)
         {
             screen_x = screen_x_before_enter;
             screen_y--;
@@ -193,6 +193,16 @@ void putc(uint8_t c) {
     }
     else if (c == '\t')
     {
+        // for Tab, print four empty spaces
+        int i;
+        for( i = 0; i < 4; i++)
+        {
+            *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = ' ';
+            *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB;
+            screen_x++;
+            screen_x %= NUM_COLS;
+            screen_y = (screen_y + (screen_x / NUM_COLS)) % NUM_ROWS;
+        }
         return;
     }
     else {

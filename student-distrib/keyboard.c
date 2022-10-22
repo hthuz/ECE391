@@ -44,11 +44,11 @@ unsigned char capital_scancode[80] =
 int ctrl_pressed = 0;
 int shift_pressed = 0;
 int alt_pressed = 0;
-
+int capslock_on = 0;  // Assume capslock is off at the beginning
 
 // The size of keyboard buffer is at most 128 bytes
 unsigned char kb_buf[KB_BUF_SIZE] = {'\0'};
-int kb_buf_index = 0;
+int kb_buf_length = 0;		//Number of characters in kb buffer ( 0 - 128)
 /* 
  * initialize_keyboard
  * DESCRIPTION: enable the keyboard interrupt IRQ1
@@ -75,9 +75,10 @@ void initialize_keyboard() {
 void keyboard_c_handler()
 {
 	unsigned char result;
+	int i;
 
 	unsigned char c = inb(KEY_PORT);
-
+	// printf("%x ",c);
 	// if get EXT_BYTE, read scancode
 	if ( c == EXT_BYTE)
 	{
@@ -100,15 +101,13 @@ void keyboard_c_handler()
 	if (c == REL_LEFT_SHIFT || c == REL_RIGHT_SHIFT)
 		shift_pressed = 0;
 
-	
-
-	//CTRL + L will clean the screen
+	// CTRL + L will clean the screen
 	// 0x26: scancode for L
 	if (ctrl_pressed == 1 && c == 0x26)
 	{
 		clear();
 		memset(kb_buf,'\0',KB_BUF_SIZE);
-		kb_buf_index = 0;
+		kb_buf_length = 0;
 		send_eoi(KEY_IRQ);
 		return;
 	}
@@ -121,59 +120,52 @@ void keyboard_c_handler()
 
 	// if shift is pressed, use capital result  
 	if(shift_pressed == 1)
+	{
 		result = capital_scancode[c];
+	}
 	else
 		result = scancode[c];
 
-	//	int kb_status;
-	// outb(0xF0,KEY_PORT);
-	// outb(0,KEY_PORT);
-	// kb_status = inb(KEY_PORT);
-	// kb_status = inb(KEY_PORT);
-	// printf("key borad status: %x\n",kb_status);
-
-	// If kb buffer doesn't overflow
-	// Put the result into buffer  
-	if(kb_buf_index != KB_BUF_SIZE - 1 && result != 0)
+	//Case1: If get backspace
+	if (result == '\b')
 	{
-		// if not backspace, add it to buffer
-		if(result != '\b')
+		// only delete if buffer length is not 0
+		if (kb_buf_length != 0)
 		{
-			// if this line reaches end, automatic add new line
-			// but shouldn't be added to buffer as this may affect the complence of command
-			if(screen_x == NUM_COLS - 1)
+			// if it's tab on buffer,delete four times
+			if(kb_buf[kb_buf_length - 1] == '\t')
 			{
-				putc('\n');
+				for (i = 0; i < 4; i++)
+					putc(result);
 			}
-			kb_buf[kb_buf_index] = result;
-			kb_buf_index++;
-		}
-		// else, remove one character from buffer
-		else
-		{
-			if (kb_buf_index != 0)
+			//else, only delete one time
+			else
 			{
-				kb_buf[kb_buf_index] = '\0';
-				kb_buf_index--;
+				putc(result);
 			}
-		}
-		putc(result);				//else print it
+			kb_buf[kb_buf_length - 1] = '\0';
+			kb_buf_length--;
+		}	
+		send_eoi(KEY_IRQ);
+		return;	
 	}
 
-	// if kb buffer overflow, stop taking unless take enter or backspace  
-	if(kb_buf_index == KB_BUF_SIZE - 1)
+	// Case2: If get other characters
+	// If kb buffer doesn't overflow, put the result into buffer  
+	if(kb_buf_length != KB_BUF_SIZE  && result != 0)
 	{
-		if (result == '\b')
-		{
-			kb_buf[kb_buf_index] = '\0';
-			kb_buf_index--;
-			putc(result);
-		}
+		// if this line reaches end, automatic add new line
+		// but shouldn't be added to buffer as this may affect the complence of command
+		if(screen_x == NUM_COLS - 1)
+			putc('\n');
+		kb_buf[kb_buf_length] = result;
+		kb_buf_length++;
+		putc(result);
+		send_eoi(KEY_IRQ);
+		return;	
 	}
-
-
-	// if result=0, you will print a blank
-
-	send_eoi(KEY_IRQ);		// send the message of ending interrupt
+	// if all these conditions are not met, still need to send EOI
+	send_eoi(KEY_IRQ);
+	return;	
 }
 
