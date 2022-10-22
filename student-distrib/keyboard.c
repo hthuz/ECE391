@@ -24,7 +24,7 @@ unsigned char capital_scancode[80] =
  '\"',  '~',  0 , '|', 'Z', 'X', 'C', 'V', 'B', 'N', 
   'M',  '<', '>', '?',   0,  0 ,  0 , ' ',  0 ,  0 
 };
-      
+    
 
 
 #define CTRL 0x1D   //for right ctrl, generate two interrupts, first is 0xE0 and second is 0x1D
@@ -40,6 +40,7 @@ unsigned char capital_scancode[80] =
 
 #define CAPSLOCK 0x3A
 #define EXT_BYTE 0xE0   
+#define CAPS_OFFSET 0x20   // 0x20 offset in ASCII between lower case and upper case letters
 
 int ctrl_pressed = 0;
 int shift_pressed = 0;
@@ -100,6 +101,19 @@ void keyboard_c_handler()
 		shift_pressed = 1;
 	if (c == REL_LEFT_SHIFT || c == REL_RIGHT_SHIFT)
 		shift_pressed = 0;
+	// if get CAPS LOCK
+	if ( c == CAPSLOCK && capslock_on == 0)
+	{
+		capslock_on = 1;
+		// end of interrupt as it shouldn't influence next if condition
+		send_eoi(KEY_IRQ);
+		return;
+	}
+	if ( c == CAPSLOCK && capslock_on == 1)
+	{
+		capslock_on = 0;
+	}
+
 
 	// CTRL + L will clean the screen
 	// 0x26: scancode for L
@@ -118,13 +132,31 @@ void keyboard_c_handler()
 		return;
 	}
 
-	// if shift is pressed, use capital result  
-	if(shift_pressed == 1)
+	// shift not pressed, caps lock off
+	if(shift_pressed == 0 && capslock_on == 0)
+	{
+		result = scancode[c];
+	}
+	// shift not pressed, caps lock on
+	if(shift_pressed == 0 && capslock_on == 1)
+	{
+		result = scancode[c];
+		if(is_alphabet(c))
+			result = result - CAPS_OFFSET;
+	}
+	// shift pressed, caps lock off
+	if(shift_pressed == 1 && capslock_on == 0)
 	{
 		result = capital_scancode[c];
 	}
-	else
-		result = scancode[c];
+	// shift pressed, caps lock on
+	if(shift_pressed == 1 && capslock_on == 1)
+	{
+		result = capital_scancode[c];
+		if(is_alphabet(c))
+			result = result + CAPS_OFFSET;
+	}
+
 
 	//Case1: If get backspace
 	if (result == '\b')
@@ -167,5 +199,26 @@ void keyboard_c_handler()
 	// if all these conditions are not met, still need to send EOI
 	send_eoi(KEY_IRQ);
 	return;	
+}
+
+/* is_alphabet
+ *   DESCRIPTION: given a scancode from keyboard, determine if it's alphabet,
+ *   			  used to help differentiate different cases of shift and caps lock
+ *   INPUTS: scancode from keyboard
+ *   OUTPUTS: none
+ *   RETURN VALUE: 1 if the key pressed is alphabet 
+ *  			   0 otherwise
+ *   SIDE EFFECTS: none
+ * 
+ */
+int is_alphabet(unsigned char scancode)
+{
+	if (( scancode >= 0x10 && scancode <= 0x19 ) ||
+		( scancode >= 0x1E && scancode <= 0x26 ) ||
+		( scancode >= 0x2C && scancode <= 0x32)  )
+		return 1;
+	else
+		return 0;
+		
 }
 
