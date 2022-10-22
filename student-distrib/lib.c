@@ -2,15 +2,15 @@
  * vim:ts=4 noexpandtab */
 
 #include "lib.h"
+#include "keyboard.h"
 
-#define VIDEO       0xB8000
-#define NUM_COLS    80
-#define NUM_ROWS    25
-#define ATTRIB      0x7
 
-static int screen_x;
-static int screen_y;
-static char* video_mem = (char *)VIDEO;
+
+int screen_x;
+int screen_y;
+int screen_x_before_enter;  // record screen x before enter. So that if you backspace after enter, go to correct place after 
+                            // this line is deleted
+char* video_mem = (char *)VIDEO;
 
 /* void clear(void);
  * Inputs: void
@@ -22,6 +22,9 @@ void clear(void) {
         *(uint8_t *)(video_mem + (i << 1)) = ' ';
         *(uint8_t *)(video_mem + (i << 1) + 1) = ATTRIB;
     }
+    // reset x and y start point
+    screen_x = 0;
+    screen_y = 0;
 }
 
 /* Standard printf().
@@ -170,8 +173,39 @@ int32_t puts(int8_t* s) {
 void putc(uint8_t c) {
     if(c == '\n' || c == '\r') {
         screen_y++;
+        screen_x_before_enter = screen_x;
         screen_x = 0;
-    } else {
+    }else if( c == '\b')
+    {
+        // normal backspace
+        if(screen_x != 0)
+        {
+            screen_x--;
+            *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = ' ';
+            *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB;        
+        }
+        // backspace when at start of line
+        if(screen_x == 0 && screen_y != 0 && kb_buf_length != 0)
+        {
+            screen_x = screen_x_before_enter;
+            screen_y--;
+        }
+    }
+    else if (c == '\t')
+    {
+        // for Tab, print four empty spaces
+        int i;
+        for( i = 0; i < 4; i++)
+        {
+            *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = ' ';
+            *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB;
+            screen_x++;
+            screen_x %= NUM_COLS;
+            screen_y = (screen_y + (screen_x / NUM_COLS)) % NUM_ROWS;
+        }
+        return;
+    }
+    else {
         *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = c;
         *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB;
         screen_x++;
@@ -246,7 +280,7 @@ uint32_t strlen(const int8_t* s) {
     while (s[len] != '\0')
         len++;
     return len;
-}
+} 
 
 /* void* memset(void* s, int32_t c, uint32_t n);
  * Inputs:    void* s = pointer to memory
