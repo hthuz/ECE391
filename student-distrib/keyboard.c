@@ -120,6 +120,7 @@ void keyboard_c_handler()
 	if (ctrl_pressed == 1 && c == 0x26)
 	{
 		clear();
+		update_cursor(0,0);
 		memset(kb_buf,'\0',KB_BUF_SIZE);
 		kb_buf_length = 0;
 		send_eoi(KEY_IRQ);
@@ -189,12 +190,16 @@ void keyboard_c_handler()
 		// if this line reaches end, automatic add new line
 		// but shouldn't be added to buffer as this may affect the complence of command
 		if(screen_x == NUM_COLS - 1)
+		{
 			putc('\n');
+			update_cursor(screen_x,screen_y);
+		}
 
 
 		kb_buf[kb_buf_length] = result;
 		kb_buf_length++;
 		putc(result);
+		update_cursor(screen_x,screen_y);
 
 		// scroll if needed
 	
@@ -267,7 +272,8 @@ int scroll_one_line()
     }
 	// reset position on screen
 	screen_x = 0;
-    screen_y--;
+    screen_y--; // reset screen_y to NUM_ROWS - 1 (24)
+	update_cursor(screen_x,screen_y);
 
 	return 0;
 }

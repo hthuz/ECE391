@@ -203,7 +203,6 @@ void putc(uint8_t c) {
             screen_x %= NUM_COLS;
             screen_y = (screen_y + (screen_x / NUM_COLS)) % NUM_ROWS;
         }
-        return;
     }
     else {
         *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = c;
@@ -212,6 +211,7 @@ void putc(uint8_t c) {
         screen_x %= NUM_COLS;
         screen_y = (screen_y + (screen_x / NUM_COLS)) % NUM_ROWS;
     }
+
 }
 
 /* int8_t* itoa(uint32_t value, int8_t* buf, int32_t radix);
