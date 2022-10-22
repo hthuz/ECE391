@@ -272,3 +272,60 @@ int scroll_one_line()
 	return 0;
 }
 
+
+
+
+/* enable_cursor
+ *   DESCRIPTION: enable cursor and set start and end scanlines
+ *   INPUTS: cursor_start -- start scanline of cursor
+ *    	     cursor_end -- end scanline of cursor
+ *   OUTPUTS: none
+ *   RETURN VALUE: none
+ *   SIDE EFFECTS: will enable cursor
+ */
+void enable_cursor(uint8_t cursor_start, uint8_t cursor_end)
+{
+	outb(0x0A,CURSOR_PORT);
+	outb( (inb(CURSOR_DATA) & 0xC0) | cursor_start, CURSOR_DATA);
+
+	outb(0x0B, CURSOR_PORT);
+	outb( (inb(CURSOR_DATA) & 0xE0) | cursor_end, 0x3D5);
+
+  	update_cursor(0,0);
+}
+
+
+/* disable_cursor
+ *   DESCRIPTION: disable cursor
+ *   INPUTS: none
+ *   OUTPUTS: none
+ *   RETURN VALUE: none
+ *   SIDE EFFECTS: will disable cursor
+ */
+void disable_cursor()
+{
+	outb(0x0A,CURSOR_PORT);
+	outb(0x20,CURSOR_DATA);
+}
+
+
+/* update_cursor
+ *   DESCRIPTION: update cursor's position
+ *   INPUTS: x -- x position of cursor
+ *   		 y -- y position of cursor
+ *   OUTPTUS: none
+ *   RETURN VALUE: none
+ *   SIDE EFFECTS: change cursor's position
+ */
+
+void update_cursor(int x, int y)
+{
+	uint16_t pos = y * NUM_COLS + x;
+
+	// pass lower 8 bits of position
+	outb(0x0F,CURSOR_PORT);
+	outb((uint8_t)(pos & 0xFF), CURSOR_DATA);
+	// pass upper 8 bits of position
+	outb(0x0E, CURSOR_PORT);
+	outb((uint8_t)((pos >> 8) & 0xFF), CURSOR_DATA);
+}
