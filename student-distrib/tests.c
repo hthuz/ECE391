@@ -190,18 +190,25 @@ int terminal_test()
 	char writestr[] = "This is STRING for testing terminal write\n";
 	int32_t fd = 3;
 	uint8_t* filename = 0;
-	char buf[KB_BUF_SIZE];
+	char buf[KB_BUF_SIZE] = {'\0'};
 	
 	terminal_open(filename);
-	if ( terminal_write(fd,writestr, strlen(writestr)) != strlen(writestr))
-	{
-		assertion_failure();
-		result = FAIL;
-	}
+	// if ( terminal_write(fd,writestr, strlen(writestr)) != strlen(writestr))
+	// {
+	// 	assertion_failure();
+	// 	result = FAIL;
+	// }
 	
 	// test termianl read
-	terminal_read(fd, buf, kb_buf_length);
-	terminal_write(fd, buf, kb_buf_length);
+	while(1)
+	{
+		// no need to read '/n'
+		printf("[391OS@localhost]$ ");
+		terminal_read(fd, buf, kb_buf_length - 1);
+		terminal_write(fd, buf, strlen(buf));
+		putc('\n');
+	}
+
 
 
 	return result;

@@ -197,8 +197,13 @@ void keyboard_c_handler()
 
 		kb_buf[kb_buf_length] = result;
 		kb_buf_length++;
-		putc(result);
 
+		putc(result);
+		// if enter is pressed
+		if(result == '\n')
+		{
+			enter_pressed = 1;
+		}
 		// scroll if needed
 	
 		if(screen_y == NUM_ROWS)

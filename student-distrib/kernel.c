@@ -141,18 +141,24 @@ void entry(unsigned long magic, unsigned long addr) {
         tss.esp0 = 0x800000;
         ltr(KERNEL_TSS);
     }
+
+    clear();
     //printf("kkk");
     idt_fill();
     //printf("come here");
     /* Init the PIC */
     i8259_init();
     initialize_keyboard();
+
+    enable_cursor(0,NUM_ROWS - 1);
+  
+
     rtc_init();
     paging_init();
     //file_system_initial();
-    int result;
-    result=test_file();
-    printf("result is:%d",result);
+    // int result;
+    // result=test_file();
+    // printf("result is:%d",result);
     /* Initialize devices, memory, filesystem, enable device interrupts on the
      * PIC, any other initialization stuff... */
 
@@ -166,7 +172,7 @@ void entry(unsigned long magic, unsigned long addr) {
 
 #ifdef RUN_TESTS
     /* Run tests */
-    //launch_tests();
+    launch_tests();
 #endif
     /* Execute the first program ("shell") ... */
 

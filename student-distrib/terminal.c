@@ -56,15 +56,39 @@ int32_t terminal_read(int32_t fd, void* buf, int32_t nbytes)
 
     // do nothing until enter is pressed
     while(enter_pressed == 0);
+    cli();
 
-    int i;
-    for(i = 0; i < nbytes; i++)
+    // if enter is pressed
+    // copy from kb_buf until is pressed
+    int i = 0; // index for copy
+    int j = 0; // index for empty
+    char* charbuf = buf;
+    //empty buf first
+    for(j = 0; j < KB_BUF_SIZE; j++)
     {
-        buf[i] == kb_buf[i];
+        charbuf[j] = '\0';
+    }
+    while(kb_buf[i] != '\n')
+    {
+        charbuf[i] = kb_buf[i];
+        kb_buf[i] = '\0'; 
+        i++;
+    }
+    // clean keyboard buffer
+
+
+    if(i != kb_buf_length - 1)
+    {
+        printf("i: %d,kb_buf_length: %d",i,kb_buf_length);
+        sti();
+        return -1;
     }
 
-
-    return 0;
+    kb_buf[i] = '\0';
+    kb_buf_length = 0;
+    enter_pressed = 0;
+    sti();
+    return i;
 }
 
 
@@ -86,7 +110,6 @@ int32_t terminal_write(int32_t fd, const void * buf, int32_t nbytes)
     char* charbuf = (char*) buf;
     if( nbytes < 0 || nbytes > KB_BUF_SIZE)
     {
-        printf("terminal write failure\n");
         sti();
         return -1;
     }
