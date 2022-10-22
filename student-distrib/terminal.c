@@ -68,7 +68,8 @@ int32_t terminal_read(int32_t fd, void* buf, int32_t nbytes)
     {
         charbuf[j] = '\0';
     }
-    while(kb_buf[i] != '\n')
+
+    while(i < KB_BUF_SIZE && kb_buf[i] != '\n')
     {
         charbuf[i] = kb_buf[i];
         kb_buf[i] = '\0'; 
@@ -77,14 +78,14 @@ int32_t terminal_read(int32_t fd, void* buf, int32_t nbytes)
     // clean keyboard buffer
 
 
-    if(i != kb_buf_length - 1)
-    {
-        printf("i: %d,kb_buf_length: %d",i,kb_buf_length);
-        sti();
-        return -1;
-    }
-
-    kb_buf[i] = '\0';
+    // if(i != kb_buf_length - 1)
+    // {
+    //     printf("i: %d,kb_buf_length: %d",i,kb_buf_length);
+    //     sti();
+    //     return -1;
+    // }
+    if( i != KB_BUF_SIZE)
+        kb_buf[i] = '\0';
     kb_buf_length = 0;
     enter_pressed = 0;
     sti();

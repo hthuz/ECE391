@@ -216,9 +216,11 @@ void keyboard_c_handler()
 				return;	
 			}
 		}
-
-		send_eoi(KEY_IRQ);
-		return;	
+	}
+	// if enter is pressed
+	if(result == '\n')
+	{
+		enter_pressed = 1;
 	}
 	// if all these conditions are not met, still need to send EOI
 	send_eoi(KEY_IRQ);

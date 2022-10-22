@@ -190,7 +190,7 @@ int terminal_test()
 	char writestr[] = "This is STRING for testing terminal write\n";
 	int32_t fd = 3;
 	uint8_t* filename = 0;
-	char buf[KB_BUF_SIZE] = {'\0'};
+	char buf[KB_BUF_SIZE + 1] = {'\0'};
 	
 	terminal_open(filename);
 	// if ( terminal_write(fd,writestr, strlen(writestr)) != strlen(writestr))
