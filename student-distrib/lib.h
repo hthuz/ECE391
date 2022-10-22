@@ -33,9 +33,11 @@ int32_t safe_strncpy(int8_t* dest, const int8_t* src, int32_t n);
 #define NUM_COLS    80
 #define NUM_ROWS    25
 #define ATTRIB      0x7
+#define VIDEO_SIZE  (NUM_COLS * NUM_ROWS * 2) // each location in pixel takes two bytes
 
 extern int screen_x;
 extern int screen_y;
+extern char* video_mem;
 
 /* Port read functions */
 /* Inb reads a byte and returns its value as a zero-extended 32-bit

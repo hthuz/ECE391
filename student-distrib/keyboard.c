@@ -190,9 +190,24 @@ void keyboard_c_handler()
 		// but shouldn't be added to buffer as this may affect the complence of command
 		if(screen_x == NUM_COLS - 1)
 			putc('\n');
+
+
 		kb_buf[kb_buf_length] = result;
 		kb_buf_length++;
 		putc(result);
+
+		// scroll if needed
+		printf("<%d>",screen_y);
+		if(screen_y == NUM_ROWS)
+		{
+			if (scroll_one_line() == -1)
+			{
+				printf("scroll error\n");
+				send_eoi(KEY_IRQ);
+				return;	
+			}
+		}
+
 		send_eoi(KEY_IRQ);
 		return;	
 	}
@@ -219,6 +234,37 @@ int is_alphabet(unsigned char scancode)
 		return 1;
 	else
 		return 0;
-		
+}
+
+
+/* scroll_one_line
+ *   DESCRIPTION: when the screen is full, screen by one line
+ *   INPUTS: none
+ *   OUTPUTS: none
+ *   RETURN VALUE: 0 if scroll succeed
+ * 				   -1 if fail
+ *   SIDE EFFECT: Will change the content of video memory
+ *
+ * 
+ */
+
+int scroll_one_line()
+{
+	int numbytes_moved;
+	// move memory starting frow second row to first row
+	printf("video_mem: %x ",video_mem);
+	printf("second_row: %x", video_mem + 2 * NUM_COLS);
+	numbytes_moved = memmove(video_mem,(uint8_t *)( video_mem + 2 * NUM_COLS), VIDEO_SIZE - NUM_COLS * 2);
+	if(numbytes_moved != VIDEO_SIZE - NUM_COLS * 2)
+		return -1;
+
+	// set video memory of last row to empty
+	int32_t i;
+    for (i = 0; i < NUM_COLS; i++) {
+        *(uint8_t *)(video_mem + VIDEO_SIZE - NUM_COLS * 2 + (i << 1)) = ' ';
+        *(uint8_t *)(video_mem + VIDEO_SIZE - NUM_COLS * 2 + (i << 1) + 1) = ATTRIB;
+    }
+    screen_y--;
+	return 0;
 }
 

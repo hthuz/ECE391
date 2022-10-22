@@ -10,7 +10,7 @@ int screen_x;
 int screen_y;
 int screen_x_before_enter;  // record screen x before enter. So that if you backspace after enter, go to correct place after 
                             // this line is deleted
-static char* video_mem = (char *)VIDEO;
+char* video_mem = (char *)VIDEO;
 
 /* void clear(void);
  * Inputs: void
@@ -24,7 +24,7 @@ void clear(void) {
     }
     // reset x and y start point
     screen_x = 0;
-    screen_y = 0;
+    screen_y = 23;
 }
 
 /* Standard printf().

@@ -16,6 +16,9 @@ void keyboard_c_handler(void);
 // use to differentiate shift and CAPSLOCK
 int is_alphabet(unsigned char scancode);
 
+// used to scroll the screen by one line
+int scroll_one_line();
+
 extern unsigned char kb_buf[KB_BUF_SIZE];
 extern int kb_buf_length;
 
