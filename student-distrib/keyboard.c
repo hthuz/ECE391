@@ -192,14 +192,11 @@ void keyboard_c_handler()
 		if(screen_x == NUM_COLS - 1)
 		{
 			putc('\n');
-			update_cursor(screen_x,screen_y);
 		}
-
 
 		kb_buf[kb_buf_length] = result;
 		kb_buf_length++;
 		putc(result);
-		update_cursor(screen_x,screen_y);
 
 		// scroll if needed
 	

@@ -7,16 +7,6 @@
 #include "keyboard.h"
 
 
-/* 
- *
- *
- * 
- */
-int32_t terminal_init()
-{
-
-}
-
 /* terminal_open
  *   DESCRIPTION: get directory entry to filename
                   allocate unused file descriptor  
@@ -29,7 +19,7 @@ int32_t terminal_init()
  */ 
 int32_t terminal_open(const uint8_t* filename)
 {
-
+    return 0;
 }
 
 /* terminal_close
@@ -45,6 +35,8 @@ int32_t terminal_close(int32_t fd)
     // if try to close default descriptor
     if(fd == 0 || fd == 1)
         return -1;
+    
+    return 0;
 }
 
 
@@ -61,6 +53,7 @@ int32_t terminal_close(int32_t fd)
 int32_t terminal_read(int32_t fd, void* buf, int32_t nbytes)
 {
 
+    return 0;
 }
 
 
@@ -73,9 +66,25 @@ int32_t terminal_read(int32_t fd, void* buf, int32_t nbytes)
  *   OUTPUTS: none
  *   RETURN VALUE: -1 if failure
  *                 number of bytes successfully written/printed if success 
- *   SIDE EFFECS: 
+ *   SIDE EFFECS: none
  */
 int32_t terminal_write(int32_t fd, const void * buf, int32_t nbytes)
 {
+    cli();
+    int i;
+    char* charbuf = (char*) buf;
+    if( nbytes < 0 || nbytes > KB_BUF_SIZE)
+    {
+        printf("terminal write failure\n");
+        sti();
+        return -1;
+    }
+
+    for(i = 0; i < nbytes; i++)
+    {
+        putc(charbuf[i]);
+    }
+    sti();
+    return nbytes;
 
 }
