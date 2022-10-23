@@ -195,14 +195,6 @@ void keyboard_c_handler()
 		kb_buf_length++;
 
 		putc(result);
-		// if enter is pressed
-		if(result == '\n')
-		{
-			enter_pressed = 1;
-		}
-		// scroll if needed
-	
-
 	}
 	// if enter is pressed
 	if(result == '\n')

@@ -174,18 +174,20 @@ void putc(uint8_t c) {
         screen_x = 0;
     }else if( c == '\b')
     {
-        // normal backspace
-        if(screen_x != 0)
-        {
-            screen_x--;
-            *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = ' ';
-            *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB;        
-        }
         // backspace when at start of line
         if(screen_x == 0 && screen_y != 0 && kb_buf_length != 0)
         {
             screen_x = NUM_COLS - 1;
             screen_y--;
+            *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = ' ';
+            *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB;   
+        }
+        // normal backspace
+        else if(screen_x != 0)
+        {
+            screen_x--;
+            *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = ' ';
+            *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB;        
         }
         //scroll if needed
 	    if(screen_y == NUM_ROWS)
@@ -230,20 +232,27 @@ void putc(uint8_t c) {
         return;
     }
     else {
+
+
+
         *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = c;
         *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB;
+
+
         screen_x++;
+        // if this line reaches end, automatic add new line
+        if(screen_x == NUM_COLS)
+	    {
+		    screen_y++;
+            // screen_x = 0;
+	    }
+
         screen_x %= NUM_COLS;
         screen_y = (screen_y + (screen_x / NUM_COLS)) % NUM_ROWS;
     }
 
     // do update on screen according to screen position
-    // if this line reaches end, automatic add new line
-    if(screen_x == NUM_COLS - 1)
-	{
-		screen_y++;
-        screen_x = 0;
-	}
+
 
     //scroll if needed
 	if(screen_y == NUM_ROWS)
