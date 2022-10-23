@@ -210,13 +210,14 @@ void putc(uint8_t c) {
             *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = ' ';
             *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB;
             screen_x++;
+            // situation when tab at the end of line
+            if(screen_x == NUM_COLS)
+	        {
+		        screen_y++;
+                // screen_x = 0;
+	        }
             screen_x %= NUM_COLS;
             screen_y = (screen_y + (screen_x / NUM_COLS)) % NUM_ROWS;
-            // situation when tab at the end of line
-            if(screen_x == NUM_COLS - 1)
-	        {
-		        putc('\n');
-	        }
 
             //scroll if needed
 	        if(screen_y == NUM_ROWS)
@@ -232,13 +233,8 @@ void putc(uint8_t c) {
         return;
     }
     else {
-
-
-
         *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = c;
         *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB;
-
-
         screen_x++;
         // if this line reaches end, automatic add new line
         if(screen_x == NUM_COLS)
