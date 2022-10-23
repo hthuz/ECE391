@@ -8,8 +8,6 @@
 
 int screen_x;
 int screen_y;
-int screen_x_before_enter;  // record screen x before enter. So that if you backspace after enter, go to correct place after 
-                            // this line is deleted
 char* video_mem = (char *)VIDEO;
 
 /* void clear(void);
@@ -173,23 +171,35 @@ int32_t puts(int8_t* s) {
 void putc(uint8_t c) {
     if(c == '\n' || c == '\r') {
         screen_y++;
-        screen_x_before_enter = screen_x;
         screen_x = 0;
     }else if( c == '\b')
     {
+        // backspace when at start of line
+        if(screen_x == 0 && screen_y != 0 && kb_buf_length != 0)
+        {
+            screen_x = NUM_COLS - 1;
+            screen_y--;
+            *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = ' ';
+            *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB;   
+        }
         // normal backspace
-        if(screen_x != 0)
+        else if(screen_x != 0)
         {
             screen_x--;
             *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = ' ';
             *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB;        
         }
-        // backspace when at start of line
-        if(screen_x == 0 && screen_y != 0 && kb_buf_length != 0)
-        {
-            screen_x = screen_x_before_enter;
-            screen_y--;
-        }
+        //scroll if needed
+	    if(screen_y == NUM_ROWS)
+	    {
+		    // printf("<start scroll>");
+		    if (scroll_one_line() == -1)
+		    {
+			    printf("scroll error\n");
+		    }
+	    }
+        update_cursor(screen_x,screen_y);
+        return;
     }
     else if (c == '\t')
     {
@@ -200,29 +210,60 @@ void putc(uint8_t c) {
             *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = ' ';
             *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB;
             screen_x++;
+            // situation when tab at the end of line
+            if(screen_x == NUM_COLS)
+	        {
+		        screen_y++;
+                if(screen_y == NUM_ROWS)
+	            {
+		            if (scroll_one_line() == -1)
+		            {
+			            printf("scroll error\n");
+		            }
+	            }
+	        }
             screen_x %= NUM_COLS;
             screen_y = (screen_y + (screen_x / NUM_COLS)) % NUM_ROWS;
+
+            //scroll if needed
+	        if(screen_y == NUM_ROWS)
+	        {
+		        // printf("<start scroll>");
+		        if (scroll_one_line() == -1)
+		        {
+			        printf("scroll error\n");
+		        }
+	        }
         }
+        update_cursor(screen_x,screen_y);
+        return;
     }
     else {
         *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = c;
         *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB;
         screen_x++;
+        // if this line reaches end, automatic add new line
+        if(screen_x == NUM_COLS)
+	    {
+		    screen_y++;
+            //case of automatic end causes scroll
+        	if(screen_y == NUM_ROWS)
+	        {
+		        if (scroll_one_line() == -1)
+		        {
+			        printf("scroll error\n");
+		        }
+	        }
+	    }
         screen_x %= NUM_COLS;
         screen_y = (screen_y + (screen_x / NUM_COLS)) % NUM_ROWS;
     }
 
     // do update on screen according to screen position
-    // if this line reaches end, automatic add new line
-    if(screen_x == NUM_COLS - 1)
-	{
-		putc('\n');
-	}
 
     //scroll if needed
 	if(screen_y == NUM_ROWS)
 	{
-		// printf("<start scroll>");
 		if (scroll_one_line() == -1)
 		{
 			printf("scroll error\n");
