@@ -240,7 +240,14 @@ void putc(uint8_t c) {
         if(screen_x == NUM_COLS)
 	    {
 		    screen_y++;
-            // screen_x = 0;
+            //case of automatic end causes scroll
+        	if(screen_y == NUM_ROWS)
+	        {
+		        if (scroll_one_line() == -1)
+		        {
+			        printf("scroll error\n");
+		        }
+	        }
 	    }
 
         screen_x %= NUM_COLS;
@@ -249,11 +256,9 @@ void putc(uint8_t c) {
 
     // do update on screen according to screen position
 
-
     //scroll if needed
 	if(screen_y == NUM_ROWS)
 	{
-		// printf("<start scroll>");
 		if (scroll_one_line() == -1)
 		{
 			printf("scroll error\n");
