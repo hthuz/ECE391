@@ -188,12 +188,8 @@ void keyboard_c_handler()
 	// If kb buffer doesn't overflow, put the result into buffer  
 	if(kb_buf_length != KB_BUF_SIZE  && result != 0)
 	{
-		// if this line reaches end, automatic add new line
+
 		// but shouldn't be added to buffer as this may affect the complence of command
-		if(screen_x == NUM_COLS - 1)
-		{
-			putc('\n');
-		}
 
 		kb_buf[kb_buf_length] = result;
 		kb_buf_length++;
@@ -206,16 +202,7 @@ void keyboard_c_handler()
 		}
 		// scroll if needed
 	
-		if(screen_y == NUM_ROWS)
-		{
-			// printf("<start scroll>");
-			if (scroll_one_line() == -1)
-			{
-				printf("scroll error\n");
-				send_eoi(KEY_IRQ);
-				return;	
-			}
-		}
+
 	}
 	// if enter is pressed
 	if(result == '\n')
@@ -278,7 +265,7 @@ int scroll_one_line()
 	// reset position on screen
 	screen_x = 0;
     screen_y--; // reset screen_y to NUM_ROWS - 1 (24)
-	update_cursor(screen_x,screen_y);
+	// update_cursor(screen_x,screen_y);
 
 	return 0;
 }
@@ -340,3 +327,4 @@ void update_cursor(int x, int y)
 	outb(0x0E, CURSOR_PORT);
 	outb((uint8_t)((pos >> 8) & 0xFF), CURSOR_DATA);
 }
+

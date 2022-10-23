@@ -211,8 +211,25 @@ void putc(uint8_t c) {
         screen_x %= NUM_COLS;
         screen_y = (screen_y + (screen_x / NUM_COLS)) % NUM_ROWS;
     }
-    update_cursor(screen_x,screen_y);
 
+    // do update on screen according to screen position
+    // if this line reaches end, automatic add new line
+    if(screen_x == NUM_COLS - 1)
+	{
+		putc('\n');
+	}
+
+    //scroll if needed
+	if(screen_y == NUM_ROWS)
+	{
+		// printf("<start scroll>");
+		if (scroll_one_line() == -1)
+		{
+			printf("scroll error\n");
+		}
+	}
+
+    update_cursor(screen_x,screen_y);
 }
 
 /* int8_t* itoa(uint32_t value, int8_t* buf, int32_t radix);

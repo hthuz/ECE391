@@ -193,18 +193,23 @@ int terminal_test()
 	char buf[KB_BUF_SIZE + 1] = {'\0'};
 	
 	terminal_open(filename);
-	// if ( terminal_write(fd,writestr, strlen(writestr)) != strlen(writestr))
-	// {
-	// 	assertion_failure();
-	// 	result = FAIL;
-	// }
+	if ( terminal_write(fd,writestr, strlen(writestr)) != strlen(writestr))
+	{
+		assertion_failure();
+		result = FAIL;
+	}
 	
 	// test termianl read
 	while(1)
 	{
 		// no need to read '/n'
-		printf("[391OS@localhost]$ ");
-		terminal_read(fd, buf, kb_buf_length - 1);
+		int num;
+		// printf("[391OS@localhost]$ ");
+		num = terminal_read(fd, buf, kb_buf_length - 1);
+		if(num == KB_BUF_SIZE)
+		{
+			putc('\n');
+		}
 		terminal_write(fd, buf, strlen(buf));
 		putc('\n');
 	}

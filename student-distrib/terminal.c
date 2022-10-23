@@ -49,7 +49,7 @@ int32_t terminal_close(int32_t fd)
  *   OUTPUTS: none
  *   RETURN VALUE: -1 if failure
  *                 number of bytes successfully copied if success
- *   SIDE EFFECTS: none
+ *   SIDE EFFECTS: will clean keyboard buffer
  */
 int32_t terminal_read(int32_t fd, void* buf, int32_t nbytes)
 {
@@ -77,13 +77,6 @@ int32_t terminal_read(int32_t fd, void* buf, int32_t nbytes)
     }
     // clean keyboard buffer
 
-
-    // if(i != kb_buf_length - 1)
-    // {
-    //     printf("i: %d,kb_buf_length: %d",i,kb_buf_length);
-    //     sti();
-    //     return -1;
-    // }
     if( i != KB_BUF_SIZE)
         kb_buf[i] = '\0';
     kb_buf_length = 0;
