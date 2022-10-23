@@ -5,6 +5,7 @@
 #include "i8259.h"
 #include "paging.h"
 #include "terminal.h"
+#include "file.h"
 
 #define PASS 1
 #define FAIL 0
@@ -219,6 +220,122 @@ int terminal_test()
 	return result;
 	
 }
+
+
+/* file_content
+ * DESCRIPTIONS: print the file content
+ * INPUTS: none
+ * OUTPUTS: none
+ * RETURN VALUES: PASS if no problem
+ *          	  FAIL otherwise  
+ * SIDE EFFECTS: you can set the minimum unit
+ */
+int file_content(){
+	TEST_HEADER;
+	int32_t fd=2;					// default fd
+	int32_t result=0;
+	int32_t unit=1;
+	const char* st="frame1.txt";
+	// const char* st2="frame1.txt";
+	uint8_t buffer[unit+1];
+	buffer[unit]='\0';			// you should initialize with \0
+								// to help printf
+	clear();
+	
+	// the first file
+	if(file_open((const uint8_t* )st)==-1) {
+		printf("wrong name");
+		return FAIL;
+	}
+	while (1){
+		result=file_read(fd,unit,buffer);
+		// putc(buffer[0]);
+		printf("%s",buffer);
+		if(result==1) break;
+	}
+	printf("file_name: %s\n",st);
+	file_close(fd);			// close fd, close my_file_table[2], init the value in it
+
+	// // the second file
+	// if(file_open((const uint8_t* )st2)==-1) {
+	// 	printf("wrong name");
+	// 	return FAIL;
+	// }
+	// while (1){
+	// 	result=file_read(fd,unit,buffer);
+	// 	if(result==1) break;
+	// 	printf("%s",buffer);
+	// 	// putc(buffer[0]);
+	// }
+	// printf("file_name: %s\n",st2);
+	// file_close(fd);
+
+	return PASS;
+	while(1);
+}
+
+/* nullbytes_file_content
+ * DESCRIPTIONS: use putc to print the file with null bytes
+ * INPUTS: none
+ * OUTPUTS: none
+ * RETURN VALUES: PASS if no problem
+ *          	  FAIL otherwise  
+ * SIDE EFFECTS: you can set the minimum unit, you can use i to see ELF
+ */
+int nullbytes_file_content(){
+	TEST_HEADER;
+	// int32_t i=0;			//used to see ELF
+	int32_t fd=2;					// default fd
+	int32_t result=0;
+	int32_t unit=1;
+	const char* st="ls";
+	// const char* st2="frame1.txt";
+	uint8_t buffer[unit+1];
+	buffer[unit]='\0';			// you should initialize with \0
+								// to help printf
+	clear();
+	
+	// the first file
+	if(file_open((const uint8_t* )st)==-1) {
+		printf("wrong name");
+		return FAIL;
+	}
+	while (1){
+		result=file_read(fd,unit,buffer);
+		// putc(buffer[0]);
+		putc(buffer[0]);
+		// i++;
+		// if (i==10) break;
+		if(result==1) break;
+	}
+	printf("file_name: %s\n",st);
+	//printf("\n");
+	file_close(fd);			// close fd, close my_file_table[2], init the value in it
+	return PASS;
+	while(1);
+}
+
+/* file_list
+ * DESCRIPTIONS: print the file list using directory_open
+ * INPUTS: none
+ * OUTPUTS: none
+ * RETURN VALUES: PASS if no problem
+ *          	  FAIL otherwise  
+ * SIDE EFFECTS: none
+ */
+int file_list(){
+	TEST_HEADER;
+	const char* st=".";
+	if(directory_open((const uint8_t* )st)==-1) {
+		printf("wrong dir name");
+		return FAIL;
+	}
+	directory_read((const uint8_t*)st);
+	return PASS;
+	while(1);
+}
+
+
 /* Checkpoint 3 tests */
 /* Checkpoint 4 tests */
 /* Checkpoint 5 tests */
@@ -230,6 +347,10 @@ void launch_tests(){
 	//TEST_OUTPUT("idt_test_totally", idt_test_totally());
 	//TEST_OUTPUT("divide test", divide_test());
 	//TEST_OUTPUT("paging_init_test", paging_init_test());
-	TEST_OUTPUT("terminal test", terminal_test());
+	// TEST_OUTPUT("terminal test", terminal_test());
+
+	// TEST_OUTPUT("file_content", file_content());
+	// TEST_OUTPUT("nullbytes_file_content", nullbytes_file_content());
+	TEST_OUTPUT("file list", file_list());
 	// launch your tests here
 }

@@ -154,7 +154,7 @@ void entry(unsigned long magic, unsigned long addr) {
   
 
     rtc_init();
-    paging_init();
+    // paging_init();
     //file_system_initial();
     // int result;
     // result=test_file();
