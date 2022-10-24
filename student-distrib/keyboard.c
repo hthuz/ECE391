@@ -218,6 +218,8 @@ void keyboard_c_handler()
  */
 int is_alphabet(unsigned char scancode)
 {
+	// the following numbers are scancode for alphabets
+	// used to determine if it's alphabet
 	if (( scancode >= 0x10 && scancode <= 0x19 ) ||
 		( scancode >= 0x1E && scancode <= 0x26 ) ||
 		( scancode >= 0x2C && scancode <= 0x32)  )

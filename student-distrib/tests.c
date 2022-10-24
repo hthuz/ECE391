@@ -23,7 +23,7 @@ static inline void assertion_failure(){
 	asm volatile("int $15");
 }
 
-
+extern int original_kb_buf_length;
 /* Checkpoint 1 tests */
 
 /* IDT Test - Example
@@ -173,50 +173,151 @@ int mult_test(){
 /* Checkpoint 2 tests */
 
 
+/* Terminal open Test
+ *
+ *	 Asserts that terminal open works
+ *   INPUTS: none
+ *   OUTPUTS: PASS/FAIL
+ *   SIDE EFFECTS: None
+ *   Coverage: terminal open
+ *   Files: termina.h/c
+ */
+int terminal_open_test()
+{
+	TEST_HEADER;
+	uint8_t filename;
+	int result = PASS;
+	if ( - 1 == terminal_open(&filename)) 
+	{
+		result = FAIL;
+		assertion_failure();
+	}
+	return result;
+}
+
+
+/* Terminal close Test
+ *
+ *	 Asserts that terminal close works
+ *   INPUTS: none
+ *   OUTPUTS: PASS/FAIL
+ *   SIDE EFFECTS: None
+ *   Coverage: terminal close
+ *   Files: termina.h/c
+ */
+int terminal_close_test()
+{
+	TEST_HEADER;
+	int result = PASS;
+	// fd is a number other than 1 or 2
+	int32_t fd = 3;
+	if( -1 == terminal_close(fd))
+	{
+		result = FAIL;
+		assertion_failure();
+	}
+	return result;
+
+}
+
+/* Termial Test
+ *
+ *   Asserts that terminal write works
+ *   INPUTS: none
+ *   OUTPUTS: PASS/FAIL
+ *   SIDE EFFECTS: None
+ *   Coverage: terminal write
+ *   Files: terminal.h/c
+ */
+int terminal_write_test()
+{
+	TEST_HEADER;
+	int result = PASS;
+
+	char writestr[] = "This is TEST STRING for testing terminal write(1234!@#$)\n";
+	int32_t fd = 3;
+	uint8_t* filename = 0;
+	
+	terminal_open(filename);
+	if ( terminal_write(fd,writestr, strlen(writestr)) != strlen(writestr))
+	{
+		result = FAIL;
+		assertion_failure();
+	}
+	return result;
+}
+
+/* Termial Test
+ *
+ *   Asserts that terminal read works. Only test once
+ *   To fully test, use terminal_test()
+ *   INPUTS: none
+ *   OUTPUTS: PASS/FAIL
+ *   SIDE EFFECTS: None
+ *   Coverage: terminal read
+ *   Files: terminal.h/c
+ */
+int terminal_read_test()
+{
+	TEST_HEADER;
+	int result = PASS;
+
+	int32_t fd = 3;
+	// add additional buf to make sure space is enough
+	char buf[KB_BUF_SIZE + 1] = {'\0'};
+
+	printf("Please type something to test terminal read:");
+
+	int ret_val = terminal_read(fd,buf,kb_buf_length - 1);
+	if( (original_kb_buf_length - 1) != ret_val)
+	{
+		printf("kb_buf_length: %d",original_kb_buf_length);
+		printf("terminal_return_value: %d",ret_val);
+		result = FAIL;
+		printf("terminal read number doesn't match!\n");
+		assertion_failure();
+	}
+	printf("terminal_read return value matches!\n");
+	return result;
+
+}
 /* Termial Test
  *
  *   Asserts that terminal read and write works
  *   INPUTS: none
  *   OUTPUTS: PASS/FAIL
  *   SIDE EFFECTS: None
- *   Coverage: Terminal read, terminal write
- *   Files: terminal.h/cs
+ *   Coverage: terminal open, terminal read, terminal write, terminal close
+ *   Files: terminal.h/c
  */
-
-
 int terminal_test()
 {
 	TEST_HEADER;
 	int result = PASS;
 
-	char writestr[] = "This is STRING for testing terminal write\n";
 	int32_t fd = 3;
 	uint8_t* filename = 0;
+	int num; // return value of terminal_read
 	char buf[KB_BUF_SIZE + 1] = {'\0'};
 	
 	terminal_open(filename);
-	if ( terminal_write(fd,writestr, strlen(writestr)) != strlen(writestr))
-	{
-		assertion_failure();
-		result = FAIL;
-	}
-	
 	// test termianl read
 	while(1)
 	{
-		// no need to read '/n'
-		int num;
 		// printf("[391OS@localhost]$ ");
+		printf("user type: ");
 		num = terminal_read(fd, buf, kb_buf_length - 1);
+		// if kb buffer is full, /n is not taken into account in buffer
+		// add a new line to make output clearer
 		if(num == KB_BUF_SIZE)
 		{
 			putc('\n');
 		}
-		terminal_write(fd, buf, strlen(buf));
+		printf("terminal result: ");
+		terminal_write(fd, buf, num);
 		putc('\n');
 	}
-
-
+	terminal_close(fd);
 
 	return result;
 	
@@ -400,7 +501,6 @@ void launch_tests(){
 	// TEST_OUTPUT("terminal_close_test", terminal_close_test());
 	// TEST_OUTPUT("terminal_write_test", terminal_write_test());
 	// TEST_OUTPUT("terminal_read_test",terminal_read_test());
-	TEST_OUTPUT("terminal test", terminal_test());
 
 
 	/* Checkpoint2 file system test*/
@@ -409,5 +509,6 @@ void launch_tests(){
 	// TEST_OUTPUT("file list", file_list());
 	// test_file();
 	TEST_OUTPUT("rtc_test", rtc_test());
+	TEST_OUTPUT("terminal test", terminal_test());
 	// launch your tests here
 }
