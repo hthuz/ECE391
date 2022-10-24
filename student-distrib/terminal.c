@@ -7,6 +7,9 @@
 #include "keyboard.h"
 
 
+// Note that terminal_read will clear kb buffer, thus change kb_buf_length
+// To test terminal read return correct number, keep a copy of kb_buf_length
+int original_kb_buf_length;
 /* terminal_open
  *   DESCRIPTION: get directory entry to filename
                   allocate unused file descriptor  
@@ -60,7 +63,7 @@ int32_t terminal_read(int32_t fd, void* buf, int32_t nbytes)
 
     // if enter is pressed
     // copy from kb_buf until is pressed
-    int i = 0; // index for copy
+    int i = 0; // index for copy, the final value should be kb_buf_length - 1
     int j = 0; // index for empty
     char* charbuf = buf;
     //empty buf first
@@ -75,10 +78,18 @@ int32_t terminal_read(int32_t fd, void* buf, int32_t nbytes)
         kb_buf[i] = '\0'; 
         i++;
     }
-    // clean keyboard buffer
 
+    // clean keyboard buffer
+    // IF kb_buffer is not full, last character is /n
+    // it should be cleaned
     if( i != KB_BUF_SIZE)
         kb_buf[i] = '\0';
+
+    // used to test terminal read return correct value
+    original_kb_buf_length = kb_buf_length;
+    // if kb_buffer is full, treat the last /n as additional character
+    if(i == KB_BUF_SIZE)
+        original_kb_buf_length += 1;
     kb_buf_length = 0;
     enter_pressed = 0;
     sti();

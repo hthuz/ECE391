@@ -11,6 +11,8 @@
 #define PASS 1
 #define FAIL 0
 
+
+extern int original_kb_buf_length;
 /* format these macros as you see fit */
 #define TEST_HEADER 	\
 	printf("[TEST %s] Running %s at %s:%d\n", __FUNCTION__, __FUNCTION__, __FILE__, __LINE__)
@@ -237,7 +239,6 @@ int terminal_write_test()
 	char writestr[] = "This is TEST STRING for testing terminal write(1234!@#$)\n";
 	int32_t fd = 3;
 	uint8_t* filename = 0;
-	char buf[KB_BUF_SIZE + 1] = {'\0'};
 	
 	terminal_open(filename);
 	if ( terminal_write(fd,writestr, strlen(writestr)) != strlen(writestr))
@@ -250,7 +251,8 @@ int terminal_write_test()
 
 /* Termial Test
  *
- *   Asserts that terminal read works
+ *   Asserts that terminal read works. Only test once
+ *   To fully test, use terminal_test()
  *   INPUTS: none
  *   OUTPUTS: PASS/FAIL
  *   SIDE EFFECTS: None
@@ -263,16 +265,21 @@ int terminal_read_test()
 	int result = PASS;
 
 	int32_t fd = 3;
-	uint8_t* filename = 0;
+	// add additional buf to make sure space is enough
 	char buf[KB_BUF_SIZE + 1] = {'\0'};
-	printf("Please type something:");
-	//use kb_buf_length since \n in kbbuffer is not taken into account
-	if(kb_buf_length - 1 != terminal_read(fd,buf,kb_buf_length - 1))
+
+	printf("Please type something to test terminal read:");
+
+	int ret_val = terminal_read(fd,buf,kb_buf_length - 1);
+	if( (original_kb_buf_length - 1) != ret_val)
 	{
+		printf("kb_buf_length: %d",original_kb_buf_length);
+		printf("terminal_return_value: %d",ret_val);
 		result = FAIL;
-		printf("terminal read number doesn't match1\n");
+		printf("terminal read number doesn't match!\n");
 		assertion_failure();
 	}
+	printf("terminal_read return value matches!\n");
 	return result;
 
 }
@@ -292,21 +299,24 @@ int terminal_test()
 
 	int32_t fd = 3;
 	uint8_t* filename = 0;
+	int num; // return value of terminal_read
 	char buf[KB_BUF_SIZE + 1] = {'\0'};
 	
 	terminal_open(filename);
 	// test termianl read
 	while(1)
 	{
-		// no need to read '/n'
-		int num;
 		// printf("[391OS@localhost]$ ");
+		printf("user type: ");
 		num = terminal_read(fd, buf, kb_buf_length - 1);
+		// if kb buffer is full, /n is not taken into account in buffer
+		// add a new line to make output clearer
 		if(num == KB_BUF_SIZE)
 		{
 			putc('\n');
 		}
-		terminal_write(fd, buf, strlen(buf));
+		printf("terminal result: ");
+		terminal_write(fd, buf, num);
 		putc('\n');
 	}
 	terminal_close(fd);
@@ -547,23 +557,36 @@ int test_selffunction(int num){
 
 /* Test suite entry point */
 void launch_tests(){
+	/* Checkpoint1  test*/
 	//TEST_OUTPUT("idt_test", idt_test());
 	//TEST_OUTPUT("idt_test_totally", idt_test_totally());
 	//TEST_OUTPUT("divide test", divide_test());
 	//TEST_OUTPUT("paging_init_test", paging_init_test());
-	// TEST_OUTPUT("terminal test", terminal_test());
 
+
+	/* Checkpoint2 terminal test*/
+	// TEST_OUTPUT("terminal_open_test",terminal_open_test());
+	// TEST_OUTPUT("terminal_close_test", terminal_close_test());
+	// TEST_OUTPUT("terminal_write_test", terminal_write_test());
+	// TEST_OUTPUT("terminal_read_test",terminal_read_test());
+	TEST_OUTPUT("terminal test", terminal_test());
+
+
+	/* Checkpoint2 file system test*/
 	// TEST_OUTPUT("file_content", file_content());
 	// TEST_OUTPUT("nullbytes_file_content", nullbytes_file_content());
 	// TEST_OUTPUT("file list", file_list());
 
-	/*used for checkpoint2 of rtc*/
+
+
+	/* Checkpoint2 rtc test */
 	// TEST_OUTPUT("rtc_open", rtc_open_test());
+
 	// rtc_close_test();
 	// TEST_OUTPUT("rtc_write", rtc_write_test());
 	// rtc_write_test(256);
 	// test_selffunction(24);
-	TEST_OUTPUT("rtc_test", rtc_test());
+	// TEST_OUTPUT("rtc_test", rtc_test());
 	// test_rtc_open_close();
 	// rtc_test();
 	// launch your tests here
