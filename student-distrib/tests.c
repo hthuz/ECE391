@@ -387,12 +387,23 @@ int rtc_test(){
 
 /* Test suite entry point */
 void launch_tests(){
+
+	/* Checkpoint1  test*/
 	//TEST_OUTPUT("idt_test", idt_test());
 	//TEST_OUTPUT("idt_test_totally", idt_test_totally());
 	//TEST_OUTPUT("divide test", divide_test());
 	//TEST_OUTPUT("paging_init_test", paging_init_test());
 	// TEST_OUTPUT("terminal test", terminal_test());
 
+	/* Checkpoint2 terminal test*/
+	// TEST_OUTPUT("terminal_open_test",terminal_open_test());
+	// TEST_OUTPUT("terminal_close_test", terminal_close_test());
+	// TEST_OUTPUT("terminal_write_test", terminal_write_test());
+	// TEST_OUTPUT("terminal_read_test",terminal_read_test());
+	TEST_OUTPUT("terminal test", terminal_test());
+
+
+	/* Checkpoint2 file system test*/
 	// TEST_OUTPUT("file_content", file_content());
 	// TEST_OUTPUT("nullbytes_file_content", nullbytes_file_content());
 	// TEST_OUTPUT("file list", file_list());
