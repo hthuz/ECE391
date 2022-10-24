@@ -354,20 +354,24 @@ int file_list(){
 int rtc_test(){
 	uint8_t* temp_open =0;
 	int32_t i=0;
-	int32_t middle=32;		// frequency should be power of 2
-	int32_t add=256;
-	int32_t max=1024;
+	int32_t freq[10] = {2,4,8,16,32,64,128,256,512,1024};// frequency should be power of 2
 	if(rtc_open(temp_open) != 0){
 		return FAIL;
 	}
+	int counter =0;
+	int multi = 5;
 	while(1){
 		rtc_read(0,0,0);
 		putc('3');
 		i++;
-		if (i==5) rtc_write(2,&middle,0);
-		if (i==100) rtc_write(2,&add,0);
-		if (i==1000) rtc_write(2,&max,0);
-		if (i==2000) break;
+		if ((i % multi==0) & (counter <10)) {
+			rtc_write(2,&freq[counter],0);
+			printf("--the frequence is %d", freq[counter]);
+			putc('\n');
+			counter++;
+			multi= multi *2;
+		}
+		else if (counter >= 10) break;
 	}
 	if(rtc_close(2) != 0){
 		return FAIL;
