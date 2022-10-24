@@ -6,6 +6,7 @@
 #include "paging.h"
 #include "terminal.h"
 #include "file.h"
+#include "rtc.h"
 
 #define PASS 1
 #define FAIL 0
@@ -326,11 +327,12 @@ int nullbytes_file_content(){
 int file_list(){
 	TEST_HEADER;
 	const char* st=".";
+	int32_t fd;
 	if(directory_open((const uint8_t* )st)==-1) {
 		printf("wrong dir name");
 		return FAIL;
 	}
-	directory_read((const uint8_t*)st);
+	directory_read(fd,(const uint8_t*)st);
 	return PASS;
 	while(1);
 }
@@ -460,7 +462,7 @@ void launch_tests(){
 
 	// TEST_OUTPUT("file_content", file_content());
 	// TEST_OUTPUT("nullbytes_file_content", nullbytes_file_content());
-	TEST_OUTPUT("file list", file_list());
+	// TEST_OUTPUT("file list", file_list());
 
 	/*used for checkpoint2 of rtc*/
 	// TEST_OUTPUT("rtc_open", rtc_open_test());
