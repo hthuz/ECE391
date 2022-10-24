@@ -69,7 +69,7 @@ int file_read(int32_t fd, uint32_t count, uint8_t* buf);
 int directory_open(const uint8_t* fname);
 int directory_close();
 int directory_write();
-int directory_read(const uint8_t* fname);
+int directory_read(int32_t fd, uint8_t* buf);
 
 // helper functions
 
@@ -79,7 +79,7 @@ int32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t lengt
 
 
 // useless function
-// extern int test_file();
+extern int test_file();
 // extern boot_block* get_myboot();
 // extern nodes_block* get_mynode();
 

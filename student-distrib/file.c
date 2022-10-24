@@ -2,11 +2,11 @@
 #include "types.h"
 #include "lib.h"
 
+uint32_t  dir_file_read;
 boot_block* myboot;
 nodes_block* mynode;
-open_file_table my_file_table[8];
+open_file_table my_file_table[8];       // just like the file_table drew in note
 data_block* mydata;
-
 
 /*
  * DESCRIPTION: 
@@ -69,6 +69,7 @@ int32_t read_dentry_by_name (const uint8_t* fname, dentry_t* dentry){
     for (i=0;i<myboot->num_dir_entries;i++){
                 // compare the two names
         if (strncmp( (const int8_t*)myboot->dir_entries[i].filename, (const int8_t*)fname, mylength)==0){
+            // printf("dentry address is %x",dentry);
             dentry->filetype=(myboot->dir_entries[i]).filetype;
             dentry->inode=(myboot->dir_entries[i]).inode;
             strncpy((int8_t*)dentry->filename,(int8_t*)fname,NameLen);
@@ -150,13 +151,14 @@ int32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t lengt
         return -1;
     }
         // if not cross over the block
+    // printf("totallength is:%d",totallength);
     if ( roffset+length <= Four_KB){
         idata=(the_node->data_index[sindex]);
         // printf("idata is:%d\n",the_node->data_index[sindex]);
         the_data= (data_block*) (mydata+idata);
         for (j=roffset ; j< roffset+length ; j++){
             buf[count]=the_data->data[j];
-            //putc(buf[count]);
+            // putc(buf[count]);
             count++;
             if (totallength==offset+count) {
                 buf[count]='\0';    // printf stop earlier using \0
@@ -234,11 +236,11 @@ int32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t lengt
 */
 int file_open(const uint8_t* fname){
     int32_t fd=default_fd;               //default fd
-    dentry_t* thedentry;
-    if (read_dentry_by_name(fname,thedentry)==-1) return -1;    // fail to find the name
-    if (thedentry->filetype!=FILE_TYPE) return -1;              // this is not file
+    dentry_t thedentry;
+    if (read_dentry_by_name(fname,&thedentry)==-1) return -1;    // fail to find the name
+    if (thedentry.filetype!=FILE_TYPE) return -1;              // this is not file
     my_file_table[fd].flags=1;                                  // 1 means in-use
-    my_file_table[fd].inode=thedentry->inode;
+    my_file_table[fd].inode=thedentry.inode;
     return 0;
 }
 
@@ -299,16 +301,17 @@ int file_read(int32_t fd, uint32_t unit, uint8_t* buf){
 
 /*
  * DESCRIPTION: 
- *          then check if filename valid
+ *          check if filename valid
  * INPUTS:  fname
  * OUTPUTS: none
  * RETURN VALUE: 0 if succeed, 1 if fail/invalid
- * SIDE EFFECT: none
+ * SIDE EFFECT: clear dir_file_read
 */
 int directory_open(const uint8_t* fname){
-    dentry_t* thedentry;
-    if (read_dentry_by_name(fname,thedentry)==-1) return -1;    // fail to find the name
-    if (thedentry->filetype!=1) return -1;                      // this is not directory
+    dentry_t thedentry;
+    dir_file_read=0;            // used to read file name
+    if (read_dentry_by_name(fname,&thedentry)==-1) return -1;    // fail to find the name
+    if (thedentry.filetype!=1) return -1;                      // this is not directory
     return 0;
 }
 
@@ -318,9 +321,10 @@ int directory_open(const uint8_t* fname){
  * INPUTS:  none
  * OUTPUTS: none
  * RETURN VALUE: 0
- * SIDE EFFECT: none
+ * SIDE EFFECT: clear dir_file_read
 */
 int directory_close(){
+    dir_file_read=0;            // used to read file name
     return 0;
 }
 
@@ -339,39 +343,29 @@ int directory_write(){
 /*
  * DESCRIPTION: 
  *          printf all the filename included in the directory
- * INPUTS:  fname
+ * INPUTS:  fd: the file descriptor
+ *          buffer: a buffer has space larger than 32
  * OUTPUTS: none
- * RETURN VALUE: 0
+ * RETURN VALUE: 0 if nothing happens, 1 if come to the end
  * SIDE EFFECT: none
 */
-int directory_read(const uint8_t* fname){
+int directory_read(int32_t fd, uint8_t* buf){
     // printf("\ncome to dir_read  ");
-    dentry_t* dentry_test;
+    dentry_t dentry_test;
 	nodes_block* test_node;
-	int32_t j;
 	int32_t i;
 	uint32_t helloinode;
 	uint32_t filelength;
-	uint32_t namelength;
-	clear();
-	for (j=0;j<=myboot->num_dir_entries-1;j++){
-		read_dentry_by_index(j,dentry_test);
-		helloinode=dentry_test->inode;
-		test_node=(nodes_block*) (mynode+helloinode);
-		filelength=test_node->length;
-		
-		namelength=strlen((int8_t*) dentry_test->filename);
-		printf("file name :");
-		// must use putc here, printf would like to find the '\0'
-		for (i=0;i<NameLen;i++){
-			putc(dentry_test->filename[i]);
-		}
-		//printf("       ");
-		printf("file type:%d",dentry_test->filetype);
-
-		printf(", file size: %d ",filelength);
-		printf("\n");
-	}
+    read_dentry_by_index(dir_file_read,&dentry_test);
+    helloinode=dentry_test.inode;
+    test_node=(nodes_block*) (mynode+helloinode);
+    filelength=test_node->length;
+    // must use putc here, printf would like to find the '\0'
+    for (i=0;i<NameLen ;i++){
+        buf[i]=dentry_test.filename[i];
+    }
+    dir_file_read++;
+    if (dir_file_read==myboot->num_dir_entries) return 1; // come to the end
     return 0;
 }
 
@@ -388,7 +382,15 @@ boot_block* get_myboot(){
  nodes_block* get_mynode(){
      return mynode;
  }
-
+*/
+/*
+ * DESCRIPTION: 
+ *          print some information of the local data
+ * INPUTS:  none
+ * OUTPUTS: none
+ * RETURN VALUE: 0
+ * SIDE EFFECT: none
+*/
 int test_file(){
     //test the address
         // int i;
@@ -406,33 +408,35 @@ int test_file(){
         // read_dentry_by_name((const uint8_t*)s,dentry_test);
         // printf("file name:%s",dentry_test->filename);
     //test the read_dentry_by_index
-        // dentry_t* dentry_test;
-        // int j;
-        // int i;
-        // uint32_t helloinode;
-        // nodes_block* test_node;
-        // uint32_t filelength;
-        // uint32_t namelength;
-        // clear();
-        // printf("\n\n\n");
-        // for (j=0;j<=myboot->num_dir_entries-1;j++){
-        //     read_dentry_by_index(j,dentry_test);
-        //     helloinode=dentry_test->inode;
-        //     test_node=(nodes_block*) (mynode+helloinode);
-        //     filelength=test_node->length;
+        dentry_t dentry_test;
+        int j;
+        int i;
+        uint32_t helloinode;
+        nodes_block* test_node;
+        uint32_t filelength;
+        uint32_t namelength;
+        clear();
+        for (j=0;j<=myboot->num_dir_entries-1;j++){
+            read_dentry_by_index(j,&dentry_test);
+            helloinode=dentry_test.inode;
+            test_node=(nodes_block*) (mynode+helloinode);
+            filelength=test_node->length;
             
-        //     namelength=strlen((int8_t*) dentry_test->filename);
-        //     printf("file name :");
-        //     // must use putc here, printf would like to find the '\0'
-        //     for (i=0;i<FILELENGTH;i++){
-        //         putc(dentry_test->filename[i]);
-        //     }
-        //     printf("       ");
-        //     printf("file type:%d",dentry_test->filetype);
+            namelength=strlen((int8_t*) dentry_test.filename);
+            if (namelength>32) namelength=32;
+            printf("file name :");
+            // must use putc here, printf would like to find the '\0'
+            for (i=0;i<NameLen-namelength;i++){
+                putc('\0');
+            }
+            for (i=0;i<namelength;i++){
+                putc(dentry_test.filename[i]);
+            }
+            printf(", file type: %d ",dentry_test.filetype);
 
-        //     printf(", file size: %d ",filelength);
-        //     printf("\n");
-        // }
+            printf(", file size: %d ",filelength);
+            printf("\n");
+        }
     //test the read_data and offset
         // dentry_t test_file=myboot->dir_entries[15];
         // uint32_t helloinode=test_file.inode;
@@ -458,5 +462,5 @@ int test_file(){
         // printf("\nfile length is:%d\n",filelength);
     return 0;
 }
-*/
+
 

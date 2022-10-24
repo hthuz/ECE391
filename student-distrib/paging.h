@@ -63,3 +63,4 @@ extern pte_t p_table[PTE_NUM] __attribute__((aligned (P_4K_SIZE)));
 char paging_init();
 
 #endif
+
