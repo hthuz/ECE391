@@ -326,13 +326,21 @@ int nullbytes_file_content(){
  */
 int file_list(){
 	TEST_HEADER;
+	int32_t result=0;
+	int32_t fd=2;
 	const char* st=".";
-	int32_t fd;
+	uint8_t buffer[33]; 	//magic number to test
+	buffer[32]='\0';
 	if(directory_open((const uint8_t* )st)==-1) {
 		printf("wrong dir name");
 		return FAIL;
 	}
-	directory_read(fd,(const uint8_t*)st);
+	// clear();
+	while(1){
+		result=directory_read(fd,buffer);
+		printf("file name:%s\n",buffer);
+		if (result==1) break;
+	}
 	return PASS;
 	while(1);
 }
@@ -384,6 +392,7 @@ void launch_tests(){
 	// TEST_OUTPUT("file_content", file_content());
 	// TEST_OUTPUT("nullbytes_file_content", nullbytes_file_content());
 	// TEST_OUTPUT("file list", file_list());
+	// test_file();
 	TEST_OUTPUT("rtc_test", rtc_test());
 	// launch your tests here
 }
