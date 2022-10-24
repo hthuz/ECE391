@@ -5,10 +5,7 @@
 
 volatile uint8_t rtc_counter;
 
-enum interrupt_t{
-	inted,
-	uninted
-}inter;
+int32_t interrupt;
 
 // struct of rtc table
 /*
@@ -31,13 +28,7 @@ rtc_table_t rtcjumptable;
  */
 int rtc_init()
 {
-    inter = uninted;
-    /*
-    rtcjumptable.read = rtc_read;
-	rtcjumptable.write = rtc_write;
-	rtcjumptable.open = rtc_open;
-	rtcjumptable.close = rtc_close;
-    */
+    interrupt = 0;
     cli();
     char previ;
     outb(RTCB, RTC_PORT);
@@ -45,7 +36,7 @@ int rtc_init()
     outb(RTCB, RTC_PORT);    
     outb(previ | 0x40, RTC_DATA);
     enable_irq(IRQ8);
-    rtc_set_rate(MAX_FREQUENCE);
+    // rtc_set_rate(MIN_FREQUENCE);
     sti();
     return 0;
 }
@@ -65,18 +56,12 @@ void rtc_interrupt()
     //printf("come here");
     // increse the counter
     rtc_counter ++;
-    //if (rtc_counter==0) test_interrupts();
-    //test_interrupts();
-    // throwaway the value of rtcc.
     outb(0x0C,RTC_PORT); 
     inb(RTC_DATA);
-
-    //inter = inted;
-
+    interrupt=1;
     sti();
     // send end
     send_eoi(IRQ8); 
-
 }
 
 
@@ -95,6 +80,8 @@ int32_t rtc_set_rate(int32_t frequence)
     // rate = freq2rate(frequence);
     // if (rate == -1) return -1;
     char prev;
+    if (isPowerOfTwo(frequence)==0) return -1;
+    int32_t fre_index=16-isPowerOfTwo(frequence);
     cli();
     //set index to rtca to stop NMI
     outb(RTCA, RTC_PORT);
@@ -103,27 +90,10 @@ int32_t rtc_set_rate(int32_t frequence)
     // reset rtca
     outb(RTCA, RTC_PORT);
     // put our frequence in rtca
-    outb((prev & RTC_MASK) | (frequence & RTC_F), RTC_DATA);
+    outb((prev & RTC_MASK) | (fre_index & RTC_F), RTC_DATA);
     sti();
     return 0;
 }
-// int32_t freq2rate(int32_t freq){
-//     switch (freq){
-//         case 2:     return 0x0F;
-//         case 4:     return 0x0E;
-//         case 8:     return 0x0D;
-//         case 16:    return 0x0C;
-//         case 32:    return 0x0B;
-//         case 64:    return 0x0A;
-//         case 128:   return 0x09;
-//         case 256:   return 0x08;
-//         case 512:   return 0x07;
-//         case 1024:  return 0x06;
-//         default:    return -1;
-//     }
-// }
-
-
 
 /*
  *   rtc_open
@@ -149,11 +119,8 @@ int32_t rtc_open(const uint8_t* filename)
  *   RETURN VALUE: 0
  *   SIDE EFFECTS: none.
  */
-
-
 int32_t rtc_close(int32_t fd)
 {
-    rtc_set_rate(MIN_FREQUENCE);
     return 0;
 }
 
@@ -168,19 +135,10 @@ int32_t rtc_close(int32_t fd)
  *   RETURN VALUE: 0
  *   SIDE EFFECTS: none.
  */
-
 int32_t rtc_read(int32_t fd, void* buf, int32_t nbytes)
 {
-    sti();
-	// disable other all interrupts 
-	disable_irq(0);
-	disable_irq(1);
-    // wait for interruption
-	inter = uninted;
-	while(inter == inted);
-	// enable other all interrupts
-	enable_irq(0);
-	enable_irq(1);
+	while(interrupt==0);
+    interrupt=0;
 	return 0;
 }
 
@@ -194,13 +152,13 @@ int32_t rtc_read(int32_t fd, void* buf, int32_t nbytes)
 int isPowerOfTwo(int num){
     int i;
     i=0;
-    if((num <= 0) || (num > MAX_FREQUENCE) || ((int)num != num)){
-    return 0;
+    if((num <= 0) || (num > MAX_FREQUENCE) ){
+        return 0;
     }
     while(num != 1){
-    if(num % 2 != 0) {return i;}
-    num /=2;
-    i++;
+        if(num % 2 != 0) {return i;}
+        num /=2;
+        i++;
     }
     return i;
 }
@@ -210,28 +168,21 @@ int isPowerOfTwo(int num){
  *   rtc_write
  *   DESCRIPTION: write RTC rate value.
  *   INPUTS: fd: integer.
- *			 buf: a pointer which stores the frequency
+ *			 buf: a pointer which stores the frequency with power of two
  *			 nbytes: the bytes that writes per time.
  *   OUTPUTS: none
- *   RETURN VALUE: nbytes or -1
+ *   RETURN VALUE: 0 or -1
  *   SIDE EFFECTS: none.
  */
-
-
-int32_t rtc_write(int32_t fd, const void* buf, int32_t nbytes)
+int32_t rtc_write(int32_t fd, int32_t* buf, int32_t nbytes)
 {
     cli();
-    int freq;
-    int w;
-    if((buf == NULL) || (nbytes != 4)) return -1;
-    freq = *(int*)buf;
-    w = isPowerOfTwo(freq);
-    if(w == 0) return -1;
-    else{
-        rtc_set_rate(16-w);
+    if((buf == NULL) ) return -1;
+    if (rtc_set_rate(buf[0])==-1){
+        printf("please use power of two and smaller than 1024");
     }
     sti();
-    return nbytes;
+    return 0;
 }
 
 

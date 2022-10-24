@@ -337,115 +337,36 @@ int file_list(){
 	while(1);
 }
 
-/* RTC_open_test
- * Discription: test whether RTC_open works fine.
+/* rtc_test
+ * Discription: test whether rtc works fine.
  * Inputs: None
  * Outputs: '1' are put on the screen periodically.
- * Side Effects: '1' is put on the screen in a specific frequency if RTC_open works.
+ * Side Effects: '1' is put on the screen in a specific frequency if rtc works.
  */
-int rtc_open_test(){
+int rtc_test(){
 	uint8_t* temp_open =0;
-	if(rtc_open(temp_open) == 0){
-		return PASS;
+	int32_t i=0;
+	int32_t middle=32;		// frequency should be power of 2
+	int32_t add=256;
+	int32_t max=1024;
+	if(rtc_open(temp_open) != 0){
+		return FAIL;
 	}
-	return 0;
-	// while(1){
-	// 	rtc_read(0,0,0);
-	// 	putc('3');
-	// }
-}
-
-// int rtc_open_test2(){
-// 	uint8_t* temp_open =0;
-// 	rtc_open(temp_open);
-// 	return PASS;
-// }
-
-/* RTC_write_test
- * Discription: test whether RTC_write works fine.
- * Inputs: freq: the freq that we want to set to the RTC.
- * Outputs: '1' are put on the screen periodically.
- * Side Effects: none.
- */
-void rtc_write_test(int freq){
-		rtc_write(0,(int*)&freq,4);
-		while(1){
-			rtc_read(0,0,0);
-			putc('1');
-		}
-}
-
-
-// void test_rtc_open_close(){
-// 	int check_close = 1;
-// 	int count = 0;
-// 	uint32_t rtc_buf;
-// 	TEST_HEADER;
-// 	rtc_open(0);
-// 	/*Print ten '1' to the screen*/
-// 	while (count < 10){
-// 		rtc_read(0, &rtc_buf,4);
-// 		putc('1');
-// 		count++;
-// 	}
-// 	/*check whether the RTC_close will return 0*/
-// 	check_close = rtc_close(0);
-// 	if (!check_close){
-// 		printf("\nRTC_close returns 0 successfully");
-// 	}
-// }
-
-
-int rtc_test() {
-    unsigned char freq[1];
-	int char_count;
-	int i;
-	uint8_t * temp_open  = (uint8_t *) 0;
-	TEST_HEADER;
-
-    rtc_open(temp_open);
-
-	int char_bound = 7; //Initially print out six chars of "1" 
-	// Loop to try out all frequencies
-	for(i = 0; i <13; i++){
-		freq[0] = 15 - i;
-		char_count = 0; 
-		// loop to print '1' based on the frequency
-		while(char_count < char_bound){
-			putc('1');
-			// temporary use freq as the buf and sizeof for rtc_read since no full implementation yet
-			rtc_read(0,freq, 4);
-			char_count++;
-			// char_bound = char_bound + 1; 
-		}
-		// print new line after finish printing for 1 frequency
-		putc('\n');
-		//As the freq of rtc increases, the screen update more faster, thus putc more "1" to recognize it
-		char_bound = char_bound +1; // A random formula to increase the bound for char to print.
-		rtc_write(0,freq, 4);
+	while(1){
+		rtc_read(0,0,0);
+		putc('3');
+		i++;
+		if (i==5) rtc_write(2,&middle,0);
+		if (i==100) rtc_write(2,&add,0);
+		if (i==1000) rtc_write(2,&max,0);
+		if (i==2000) break;
 	}
-	rtc_close(0);
+	if(rtc_close(2) != 0){
+		return FAIL;
+	}
 	return PASS;
 }
 
-
-
-
-/* RTC_close_test
- * Discription: test whether RTC_close works fine.
- * Inputs: none.
- * Outputs: print "rtc close test success" if passes test.
- * Side Effects: none.
- */
-void rtc_close_test(){
-	if(!rtc_close(0))
-		printf("rtc close test success\n");
-}
-
-int test_selffunction(int num){
-	printf("the answer is %d", isPowerOfTwo(num));
-	return 0;
-}
 
 /* Checkpoint 3 tests */
 /* Checkpoint 4 tests */
@@ -463,15 +384,6 @@ void launch_tests(){
 	// TEST_OUTPUT("file_content", file_content());
 	// TEST_OUTPUT("nullbytes_file_content", nullbytes_file_content());
 	// TEST_OUTPUT("file list", file_list());
-
-	/*used for checkpoint2 of rtc*/
-	// TEST_OUTPUT("rtc_open", rtc_open_test());
-	// rtc_close_test();
-	// TEST_OUTPUT("rtc_write", rtc_write_test());
-	// rtc_write_test(256);
-	// test_selffunction(24);
 	TEST_OUTPUT("rtc_test", rtc_test());
-	// test_rtc_open_close();
-	// rtc_test();
 	// launch your tests here
 }
