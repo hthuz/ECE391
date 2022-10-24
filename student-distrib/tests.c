@@ -173,23 +173,68 @@ int mult_test(){
 /* Checkpoint 2 tests */
 
 
-/* Termial Test
+/* Terminal open Test
  *
- *   Asserts that terminal read and write works
+ *	 Asserts that terminal open works
  *   INPUTS: none
  *   OUTPUTS: PASS/FAIL
  *   SIDE EFFECTS: None
- *   Coverage: Terminal read, terminal write
- *   Files: terminal.h/cs
+ *   Coverage: terminal open
+ *   Files: termina.h/c
  */
+int terminal_open_test()
+{
+	TEST_HEADER;
+	uint8_t filename;
+	int result = PASS;
+	if ( - 1 == terminal_open(&filename)) 
+	{
+		result = FAIL;
+		assertion_failure();
+	}
+	return result;
+}
 
 
-int terminal_test()
+/* Terminal close Test
+ *
+ *	 Asserts that terminal close works
+ *   INPUTS: none
+ *   OUTPUTS: PASS/FAIL
+ *   SIDE EFFECTS: None
+ *   Coverage: terminal close
+ *   Files: termina.h/c
+ */
+int terminal_close_test()
+{
+	TEST_HEADER;
+	int result = PASS;
+	// fd is a number other than 1 or 2
+	int32_t fd = 3;
+	if( -1 == terminal_close(fd))
+	{
+		result = FAIL;
+		assertion_failure();
+	}
+	return result;
+
+}
+
+/* Termial Test
+ *
+ *   Asserts that terminal write works
+ *   INPUTS: none
+ *   OUTPUTS: PASS/FAIL
+ *   SIDE EFFECTS: None
+ *   Coverage: terminal write
+ *   Files: terminal.h/c
+ */
+int terminal_write_test()
 {
 	TEST_HEADER;
 	int result = PASS;
 
-	char writestr[] = "This is STRING for testing terminal write\n";
+	char writestr[] = "This is TEST STRING for testing terminal write(1234!@#$)\n";
 	int32_t fd = 3;
 	uint8_t* filename = 0;
 	char buf[KB_BUF_SIZE + 1] = {'\0'};
@@ -197,10 +242,59 @@ int terminal_test()
 	terminal_open(filename);
 	if ( terminal_write(fd,writestr, strlen(writestr)) != strlen(writestr))
 	{
-		assertion_failure();
 		result = FAIL;
+		assertion_failure();
 	}
+	return result;
+}
+
+/* Termial Test
+ *
+ *   Asserts that terminal read works
+ *   INPUTS: none
+ *   OUTPUTS: PASS/FAIL
+ *   SIDE EFFECTS: None
+ *   Coverage: terminal read
+ *   Files: terminal.h/c
+ */
+int terminal_read_test()
+{
+	TEST_HEADER;
+	int result = PASS;
+
+	int32_t fd = 3;
+	uint8_t* filename = 0;
+	char buf[KB_BUF_SIZE + 1] = {'\0'};
+	printf("Please type something:");
+	//use kb_buf_length since \n in kbbuffer is not taken into account
+	if(kb_buf_length - 1 != terminal_read(fd,buf,kb_buf_length - 1))
+	{
+		result = FAIL;
+		printf("terminal read number doesn't match1\n");
+		assertion_failure();
+	}
+	return result;
+
+}
+/* Termial Test
+ *
+ *   Asserts that terminal read and write works
+ *   INPUTS: none
+ *   OUTPUTS: PASS/FAIL
+ *   SIDE EFFECTS: None
+ *   Coverage: terminal open, terminal read, terminal write, terminal close
+ *   Files: terminal.h/c
+ */
+int terminal_test()
+{
+	TEST_HEADER;
+	int result = PASS;
+
+	int32_t fd = 3;
+	uint8_t* filename = 0;
+	char buf[KB_BUF_SIZE + 1] = {'\0'};
 	
+	terminal_open(filename);
 	// test termianl read
 	while(1)
 	{
@@ -215,8 +309,7 @@ int terminal_test()
 		terminal_write(fd, buf, strlen(buf));
 		putc('\n');
 	}
-
-
+	terminal_close(fd);
 
 	return result;
 	
