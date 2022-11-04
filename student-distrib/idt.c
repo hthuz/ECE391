@@ -34,11 +34,11 @@ idt_fill(){
     idt[15].present=0;      // magic number 15 because we don't use that
     idt[keyboard_port].present=1;      
     idt[rtc_port].present=1;
-    idt[systemcall_port].present=1;
+    idt[sys_call_port].present=1;
 
     idt[keyboard_port].reserved3=0;
     idt[rtc_port].reserved3=0;
-    idt[systemcall_port].dpl=3;
+    idt[sys_call_port].dpl=3;
     SET_IDT_ENTRY(idt[0],idt_0);    //divide_error
     SET_IDT_ENTRY(idt[1],idt_1);    //debug
     SET_IDT_ENTRY(idt[2],idt_2);    //nmi

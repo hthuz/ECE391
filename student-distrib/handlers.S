@@ -2,11 +2,9 @@
 #include "handlers.h"
 
 .data
-sys_call_table:
-.long 0, halt, execute, read, write, open, close, getargs, vidmap, set_handler, sigreturn
 
 .text
-.global keyboard_linkage,rtc_linkage
+.global keyboard_linkage,rtc_linkage, sys_call_linkage
 
 # two handlers used to link the asm and c functions
 keyboard_linkage:
@@ -31,8 +29,7 @@ sys_call_linkage:
   cmpl $10,%eax
   jg syscall_error
 
-  call *sys_call_table(0,%eax,4)
-  
+  call *sys_call_table(,%eax,4)
   popal
   iret
 
@@ -41,3 +38,5 @@ syscall_error:
   popal
   iret
 
+sys_call_table:
+.long 0, halt, execute, read, write, open, close, getargs, vidmap, set_handler, sigreturn
