@@ -9,6 +9,7 @@
 /*keyboard wrapper for assembly linkage*/
 void keyboard_linkage(void);
 void rtc_linkage(void);
+void sys_call_linkage(void);
 
 #endif
 

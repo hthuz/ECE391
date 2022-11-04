@@ -61,7 +61,7 @@ idt_fill(){
     SET_IDT_ENTRY(idt[19],idt_19);  //simd_coprocessor_error
     SET_IDT_ENTRY(idt[keyboard_port],keyboard_linkage);
     SET_IDT_ENTRY(idt[rtc_port],rtc_linkage);
-//  SET_IDT_ENTRY(idt[systemcall_port],idt_128);
+    SET_IDT_ENTRY(idt[sys_call_port],sys_call_linkage);
 }
 
 /* 

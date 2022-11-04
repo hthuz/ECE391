@@ -6,7 +6,7 @@
 // magic numbers
 #define keyboard_port  0x21
 #define rtc_port  0x28
-#define systemcall_port  0x80
+#define sys_call_port  0x80
 
 
 extern void idt_fill(); //used to initilize idt
