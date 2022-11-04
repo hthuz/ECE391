@@ -11,10 +11,10 @@
 #define CURSOR_DATA 0x3D5
 
 // initialize_keyboard
-void initialize_keyboard(void);
+void keyboard_init(void);
 
 // handler c function - keyboard interrupt
-void keyboard_c_handler(void);
+void keyboard_handler(void);
 
 // use to differentiate shift and CAPSLOCK
 int is_alphabet(unsigned char scancode);
@@ -24,6 +24,7 @@ int scroll_one_line();
 
 // functions for cursor control
 // Refer to https://wiki.osdev.org/Text_Mode_Cursor
+void cursor_init();
 void enable_cursor(uint8_t cursor_start, uint8_t cursor_end);
 void disable_cursor();
 void update_cursor(int x, int y);

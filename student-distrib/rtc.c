@@ -50,7 +50,7 @@ int rtc_init()
  *   RETURN VALUE: none
  *   SIDE EFFECTS: change register C to enable next interrupt signal
  */
-void rtc_interrupt()
+void rtc_handler()
 {
     cli();
     //printf("come here");

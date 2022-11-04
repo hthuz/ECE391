@@ -1,7 +1,7 @@
 #include "idt.h"
 #include "lib.h"
 #include "x86_desc.h"
-#include "myhand.h"
+#include "handlers.h"
 
 
 /* 
@@ -59,9 +59,9 @@ idt_fill(){
     SET_IDT_ENTRY(idt[17],idt_17);  //alignment_check
     SET_IDT_ENTRY(idt[18],idt_18);  //machine_check
     SET_IDT_ENTRY(idt[19],idt_19);  //simd_coprocessor_error
-    SET_IDT_ENTRY(idt[keyboard_port],keyboard_a_handler);
-    SET_IDT_ENTRY(idt[40],rtc_a_handler);
-//  SET_IDT_ENTRY(idt[128],idt_128);
+    SET_IDT_ENTRY(idt[keyboard_port],keyboard_linkage);
+    SET_IDT_ENTRY(idt[rtc_port],rtc_linkage);
+//  SET_IDT_ENTRY(idt[systemcall_port],idt_128);
 }
 
 /* 

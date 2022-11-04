@@ -59,7 +59,7 @@ int kb_buf_length = 0;		//Number of characters in kb buffer ( 0 - 128)
  * RETURN VALUE: none
  * SIDE EFFECT: enable IRQ1
  */
-void initialize_keyboard() {
+void keyboard_init() {
 	enable_irq(KEY_IRQ);	// enable keyboard_irq
 }
 
@@ -74,7 +74,7 @@ void initialize_keyboard() {
  * SIDE EFFECT: after that, it will send EOI to tell the cpu it has done
  */
 
-void keyboard_c_handler()
+void keyboard_handler()
 {
 	unsigned char result;
 	int i;
@@ -264,8 +264,18 @@ int scroll_one_line()
 	return 0;
 }
 
-
-
+/* cursor_init
+ *   DESCRIPTION: cursor initialize
+ *   INPUTS: none
+ *   OUTPUTS: none
+ *   RETURN VALUE: none
+ *   SIDE EFFECTS: side start and end scanline for this os
+ */
+void cursor_init()
+{
+  enable_cursor(0,NUM_ROWS - 1);
+  return;
+}
 
 /* enable_cursor
  *   DESCRIPTION: enable cursor and set start and end scanlines

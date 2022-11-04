@@ -23,7 +23,7 @@
 
 extern int rtc_init();
 
-extern void rtc_interrupt();
+extern void rtc_handler();
 
 extern int32_t rtc_set_rate(int32_t frequence);
 

@@ -4,9 +4,9 @@
 #include "x86_desc.h"
 
 // magic numbers
-#define keyboard_port  33
-#define rtc_port  40
-#define systemcall_port  128
+#define keyboard_port  0x21
+#define rtc_port  0x28
+#define systemcall_port  0x80
 
 
 extern void idt_fill(); //used to initilize idt

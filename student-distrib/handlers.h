@@ -7,8 +7,8 @@
 #include "rtc.h"
 
 /*keyboard wrapper for assembly linkage*/
-void keyboard_a_handler(void);
-void rtc_a_handler(void);
+void keyboard_linkage(void);
+void rtc_linkage(void);
 
 #endif
 

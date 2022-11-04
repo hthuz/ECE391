@@ -1,20 +1,20 @@
 #define ASM 1  
-#include "myhand.h"
+#include "handlers.h"
 
 .text
-.global keyboard_a_handler,rtc_a_handler
+.global keyboard_linkage,rtc_linkage
 
 # two handlers used to link the asm and c functions
-keyboard_a_handler:
+keyboard_linkage:
     pushal
-    call keyboard_c_handler
+    call keyboard_handler
     popal
     iret
     
-rtc_a_handler:
+rtc_linkage:
     pushal
     pushfl
-    call rtc_interrupt
+    call rtc_handler
     popfl
     popal
     iret
