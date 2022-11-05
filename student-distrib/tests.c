@@ -506,9 +506,9 @@ void launch_tests(){
 	/* Checkpoint2 file system test*/
 	// TEST_OUTPUT("file_content", file_content());
 	// TEST_OUTPUT("nullbytes_file_content", nullbytes_file_content());
-	// TEST_OUTPUT("file list", file_list());
+	TEST_OUTPUT("file list", file_list());
 	// test_file();
-	TEST_OUTPUT("rtc_test", rtc_test());
-	TEST_OUTPUT("terminal test", terminal_test());
+	// TEST_OUTPUT("rtc_test", rtc_test());
+	/// TEST_OUTPUT("terminal test", terminal_test());
 	// launch your tests here
 }

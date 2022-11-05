@@ -4,6 +4,15 @@
 #define SYSCALL_H
 
 #include "lib.h"
+#include "file.h"
+
+// Process Control Block structure
+typedef struct pcb_t
+{
+  open_file_table farray[8];
+  
+
+}pcb_t;
 
 
 // System call functions
