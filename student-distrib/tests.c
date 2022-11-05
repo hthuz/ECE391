@@ -332,50 +332,52 @@ int terminal_test()
  *          	  FAIL otherwise  
  * SIDE EFFECTS: you can set the minimum unit
  */
-int file_content(){
-	TEST_HEADER;
-	int32_t fd=2;					// default fd
-	int32_t result=0;
-	int32_t unit=1;
-	const char* st="frame1.txt";
-	// const char* st2="frame1.txt";
-	uint8_t buffer[unit+1];
-	buffer[unit]='\0';			// you should initialize with \0
-								// to help printf
-	clear();
-	
-	// the first file
-	if(file_open((const uint8_t* )st)==-1) {
-		printf("wrong name");
-		return FAIL;
-	}
-	while (1){
-		result=file_read(fd,unit,buffer);
-		// putc(buffer[0]);
-		printf("%s",buffer);
-		if(result==1) break;
-	}
-	printf("file_name: %s\n",st);
-	file_close(fd);			// close fd, close my_file_table[2], init the value in it
-
-	// // the second file
-	// if(file_open((const uint8_t* )st2)==-1) {
-	// 	printf("wrong name");
-	// 	return FAIL;
-	// }
-	// while (1){
-	// 	result=file_read(fd,unit,buffer);
-	// 	if(result==1) break;
-	// 	printf("%s",buffer);
-	// 	// putc(buffer[0]);
-	// }
-	// printf("file_name: %s\n",st2);
-	// file_close(fd);
-
-	return PASS;
-	while(1);
-}
-
+/*
+ *int file_content(){
+ *  TEST_HEADER;
+ *  int32_t fd=2;					// default fd
+ *  int32_t result=0;
+ *  int32_t unit=1;
+ *  const char* st="frame1.txt";
+ *  // const char* st2="frame1.txt";
+ *  uint8_t buffer[unit+1];
+ *  buffer[unit]='\0';			// you should initialize with \0
+ *                // to help printf
+ *  clear();
+ *  
+ *  // the first file
+ *  if(file_open((const uint8_t* )st)==-1) {
+ *    printf("wrong name");
+ *    return FAIL;
+ *  }
+ *  while (1){
+ *    result=file_read(fd,unit,buffer);
+ *    // putc(buffer[0]);
+ *    printf("%s",buffer);
+ *    if(result==1) break;
+ *  }
+ *  printf("file_name: %s\n",st);
+ *  file_close(fd);			// close fd, close my_file_table[2], init the value in it
+ *
+ *  // // the second file
+ *  // if(file_open((const uint8_t* )st2)==-1) {
+ *  // 	printf("wrong name");
+ *  // 	return FAIL;
+ *  // }
+ *  // while (1){
+ *  // 	result=file_read(fd,unit,buffer);
+ *  // 	if(result==1) break;
+ *  // 	printf("%s",buffer);
+ *  // 	// putc(buffer[0]);
+ *  // }
+ *  // printf("file_name: %s\n",st2);
+ *  // file_close(fd);
+ *
+ *  return PASS;
+ *  while(1);
+ *}
+ *
+ */
 /* nullbytes_file_content
  * DESCRIPTIONS: use putc to print the file with null bytes
  * INPUTS: none
@@ -384,38 +386,40 @@ int file_content(){
  *          	  FAIL otherwise  
  * SIDE EFFECTS: you can set the minimum unit, you can use i to see ELF
  */
-int nullbytes_file_content(){
-	TEST_HEADER;
-	// int32_t i=0;			//used to see ELF
-	int32_t fd=2;					// default fd
-	int32_t result=0;
-	int32_t unit=1;
-	const char* st="ls";
-	// const char* st2="frame1.txt";
-	uint8_t buffer[unit+1];
-	buffer[unit]='\0';			// you should initialize with \0
-								// to help printf
-	clear();
-	
-	// the first file
-	if(file_open((const uint8_t* )st)==-1) {
-		printf("wrong name");
-		return FAIL;
-	}
-	while (1){
-		result=file_read(fd,unit,buffer);
-		// putc(buffer[0]);
-		putc(buffer[0]);
-		// i++;
-		// if (i==10) break;
-		if(result==1) break;
-	}
-	printf("file_name: %s\n",st);
-	//printf("\n");
-	file_close(fd);			// close fd, close my_file_table[2], init the value in it
-	return PASS;
-	while(1);
-}
+/*
+ *int nullbytes_file_content(){
+ *  TEST_HEADER;
+ *  // int32_t i=0;			//used to see ELF
+ *  int32_t fd=2;					// default fd
+ *  int32_t result=0;
+ *  int32_t unit=1;
+ *  const char* st="ls";
+ *  // const char* st2="frame1.txt";
+ *  uint8_t buffer[unit+1];
+ *  buffer[unit]='\0';			// you should initialize with \0
+ *                // to help printf
+ *  clear();
+ *  
+ *  // the first file
+ *  if(file_open((const uint8_t* )st)==-1) {
+ *    printf("wrong name");
+ *    return FAIL;
+ *  }
+ *  while (1){
+ *    result=file_read(fd,unit,buffer);
+ *    // putc(buffer[0]);
+ *    putc(buffer[0]);
+ *    // i++;
+ *    // if (i==10) break;
+ *    if(result==1) break;
+ *  }
+ *  printf("file_name: %s\n",st);
+ *  //printf("\n");
+ *  file_close(fd);			// close fd, close my_file_table[2], init the value in it
+ *  return PASS;
+ *  while(1);
+ *}
+ */
 
 /* file_list
  * DESCRIPTIONS: print the file list using directory_open

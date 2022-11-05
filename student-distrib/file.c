@@ -256,7 +256,7 @@ int file_open(const uint8_t* fname){
  * SIDE EFFECT: initialize the my_file_table[fd]
 */
 int file_close(int32_t fd){
-    init_file_table(fd);
+ //   init_file_table(fd);
     return 0;
 }
 
