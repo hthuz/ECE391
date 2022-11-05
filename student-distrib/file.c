@@ -5,7 +5,7 @@
 uint32_t  dir_file_read;
 boot_block* myboot;
 nodes_block* mynode;
-open_file_table my_file_table[8];       // just like the file_table drew in note
+// open_file_table my_file_table[8];       // just like the file_table drew in note
 data_block* mydata;
 
 /*
@@ -21,7 +21,7 @@ void fs_init_address(uint32_t address){
     myboot= (boot_block*) address;
     mynode= (nodes_block*) (address+Four_KB);
     mydata= (data_block*) (address+Four_KB+Four_KB* (myboot->num_inodes));
-    init_file_table(default_fd);
+    // init_file_table(default_fd);
 }
 
 /*
@@ -32,13 +32,15 @@ void fs_init_address(uint32_t address){
  * RETURN VALUE: none
  * SIDE EFFECT: initialize the my_file_table[fd]
 */
-void init_file_table(int32_t fd){
-    my_file_table[fd].file_position=0;
-    my_file_table[fd].flags=0;
-    my_file_table[fd].inode=0;
-    return;
-}
-
+/*
+ *void init_file_table(int32_t fd){
+ *    my_file_table[fd].file_position=0;
+ *    my_file_table[fd].flags=0;
+ *    my_file_table[fd].inode=0;
+ *    return;
+ *}
+ *
+ */
 // helper functions
 
 /*
@@ -239,8 +241,8 @@ int file_open(const uint8_t* fname){
     dentry_t thedentry;
     if (read_dentry_by_name(fname,&thedentry)==-1) return -1;    // fail to find the name
     if (thedentry.filetype!=FILE_TYPE) return -1;              // this is not file
-    my_file_table[fd].flags=1;                                  // 1 means in-use
-    my_file_table[fd].inode=thedentry.inode;
+    // my_file_table[fd].flags=1;                                  // 1 means in-use
+    // my_file_table[fd].inode=thedentry.inode;
     return 0;
 }
 
@@ -284,20 +286,22 @@ int file_write(){
  * RETURN VALUE: 0 if succeed, -1 if fail, 1 if come to the end
  * SIDE EFFECT: read and add the postion
 */
-int file_read(int32_t fd, uint32_t unit, uint8_t* buf){
-    int32_t result=0;
-    uint32_t ino=my_file_table[fd].inode;
-    uint32_t pos=my_file_table[fd].file_position;
-    // printf("pos is:%d\n",pos);
-    if (buf==NULL) return -1;
-    result=read_data (ino, pos, buf, unit);
-    if (result==-1) return -1;
-    // printf("%s",buf);
-    if (result==0) return 1;
-    my_file_table[fd].file_position+=unit;
-    return 0;
-}
-
+/*
+ *int file_read(int32_t fd, uint32_t unit, uint8_t* buf){
+ *    int32_t result=0;
+ *    uint32_t ino=my_file_table[fd].inode;
+ *    uint32_t pos=my_file_table[fd].file_position;
+ *    // printf("pos is:%d\n",pos);
+ *    if (buf==NULL) return -1;
+ *    result=read_data (ino, pos, buf, unit);
+ *    if (result==-1) return -1;
+ *    // printf("%s",buf);
+ *    if (result==0) return 1;
+ *    my_file_table[fd].file_position+=unit;
+ *    return 0;
+ *}
+ *
+ */
 
 /*
  * DESCRIPTION: 
