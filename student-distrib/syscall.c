@@ -4,10 +4,12 @@
 #include "file.h"
 #include "lib.h"
 #include "paging.h"
+#include "terminal.h"
 
 
 int32_t cur_pid = 0;
 extern pde_t p_dir[PDE_NUM] __attribute__((aligned (P_4K_SIZE)));
+extern nodes_block* mynode;
 
 
 
@@ -29,8 +31,9 @@ int32_t halt(uint8_t status)
  */
 int32_t execute(const uint8_t* command)
 {
-  pcb_t pcb;        // PCB of program
+  pcb_t* pcb;        // PCB of program
   dentry_t dentry;  // dentry of program file
+  nodes_block* inode; // inode of program file
   uint8_t buf[FHEADER_LEN];     // buf containing bytes of the file
   int32_t i;
   
@@ -39,6 +42,7 @@ int32_t execute(const uint8_t* command)
     return -1;
   if(read_dentry_by_name(command, &dentry) == -1)
     return -1;
+  inode = (nodes_block*) (mynode + dentry.inode);
 
   // Check for executable
   if(dentry.filetype != FILE_TYPE)
@@ -49,14 +53,40 @@ int32_t execute(const uint8_t* command)
      buf[2] != EXE_MAGIC3 || buf[3] != EXE_MAGIC4)
     return -1;
 
-  pcb.pid = cur_pid;
-  cur_pid++;
-  pcb.parent_pid = cur_pid - 1;
   // Set up paging
-  set_process_paging(pcb.pid);
+  set_process_paging(cur_pid);
+
+  // Load file into program image 
+  read_data(dentry.inode,0,(uint8_t*)PROG_IMAGE_ADDR,inode->length);
+
+  // Create PCB
+  pcb = (pcb_t*)(P_4M_SIZE * 2 - (cur_pid + 1) * P_4K_SIZE);
+  if(cur_pid == 0)
+    pcb->parent_pid = 0;
+  else
+    pcb->parent_pid = cur_pid - 1;
+  pcb->pid = cur_pid;
+  cur_pid++;
+
+  // File array for stdin
+  pcb->farray[0].flags = 1;
+  pcb->farray[0].optable_ptr->open = &terminal_open;
+  pcb->farray[0].optable_ptr->read = &terminal_read;
+  pcb->farray[0].optable_ptr->write = 0;
+  pcb->farray[0].optable_ptr->close = &terminal_close;
+
+  // File array for stdout
+  pcb->farray[1].flags = 1;
+  pcb->farray[1].optable_ptr->open = &terminal_open;
+  pcb->farray[1].optable_ptr->read = 0;
+  pcb->farray[1].optable_ptr->write = &terminal_write;
+  pcb->farray[1].optable_ptr->close = &terminal_close;
+  
+
 
   
-  // Load file into memory
+
+
 
   return 0;
 }
@@ -129,9 +159,6 @@ void set_process_paging(int32_t pid)
   p_dir[index].page_size = 1;
   p_dir[index].cache_dis = 1;
   p_dir[index].base_addr = (((pid + 2) * P_4M_SIZE) >> 12);
-
-  // Copy program image to correct offset(0x00048000) within the page
-  // memcpy((void*)P_128M_SIZE, (void*)(P_128M_SIZE + 0x00048000), P_4M_SIZE);
 }
 
 

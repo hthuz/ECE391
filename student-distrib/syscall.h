@@ -14,12 +14,21 @@
 #define EXE_MAGIC4 0x46
 
 
-#define PROG_IMAGE 0x08048000
+#define PROG_IMAGE_ADDR 0x08048000
+
+
+typedef struct optable_t
+{
+  int32_t (*open)(const uint8_t*);
+  int32_t (*close)(int32_t fd);
+  int32_t (*read)(int32_t, void*, int32_t);
+  int32_t (*write)(int32_t, const void*, int32_t);
+}optable_t;
 
 // File Array Entry structure
 typedef struct fentry_t
 {
-  int32_t optable_ptr;
+  optable_t* optable_ptr;
   int32_t inode;
   int32_t f_pos;
   int32_t flags;
