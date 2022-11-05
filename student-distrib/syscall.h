@@ -6,7 +6,8 @@
 #include "lib.h"
 #include "file.h"
 
-#define EXE_MAGIC_NUM 4
+// A header occupies first 40 bytes that gives information about load and starting
+#define FHEADER_LEN 40
 #define EXE_MAGIC1 0x7f
 #define EXE_MAGIC2 0x45
 #define EXE_MAGIC3 0x4c

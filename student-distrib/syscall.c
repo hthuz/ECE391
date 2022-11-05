@@ -31,7 +31,7 @@ int32_t execute(const uint8_t* command)
 {
   pcb_t pcb;        // PCB of program
   dentry_t dentry;  // dentry of program file
-  uint8_t* buf;     // buf containing bytes of the file
+  uint8_t buf[FHEADER_LEN];     // buf containing bytes of the file
   int32_t i;
   
   // Parse args
@@ -43,7 +43,7 @@ int32_t execute(const uint8_t* command)
   // Check for executable
   if(dentry.filetype != FILE_TYPE)
     return -1;
-  if(read_data(dentry.inode, 0, buf, EXE_MAGIC_NUM) != EXE_MAGIC_NUM)
+  if(read_data(dentry.inode, 0, buf, FHEADER_LEN) != FHEADER_LEN)
     return -1;
   if(buf[0] != EXE_MAGIC1 || buf[1] != EXE_MAGIC2 ||
      buf[2] != EXE_MAGIC3 || buf[3] != EXE_MAGIC4)
@@ -131,7 +131,7 @@ void set_process_paging(int32_t pid)
   p_dir[index].base_addr = (((pid + 2) * P_4M_SIZE) >> 12);
 
   // Copy program image to correct offset(0x00048000) within the page
-  memcpy((void*)P_128M_SIZE, (void*)(P_128M_SIZE + 0x00048000), P_4M_SIZE);
+  // memcpy((void*)P_128M_SIZE, (void*)(P_128M_SIZE + 0x00048000), P_4M_SIZE);
 }
 
 
