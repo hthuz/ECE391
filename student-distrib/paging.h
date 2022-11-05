@@ -7,7 +7,8 @@
 #define VID_MEM_START 0x000B8000
 #define VID_MEM_END 0x000C0000
 #define P_4K_SIZE (4*1024)
-#define P_4M_SIZE (4*1024*1024)
+#define P_4M_SIZE (1024 * P_4K_SIZE)
+#define P_128M_SIZE (32 * P_4M_SIZE)
 #define KERNEL_ADDR (4*1024*1024)  //0x00400000 starting address of kernel memory
 
 #define PDE_INDEX(vir_mem) (( (vir_mem) & 0xFFC00000) >> 22)
