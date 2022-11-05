@@ -5,6 +5,7 @@
 
 #include "keyboard.h"
 #include "rtc.h"
+#include "syscall.h"
 
 /*keyboard wrapper for assembly linkage*/
 void keyboard_linkage(void);
