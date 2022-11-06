@@ -174,11 +174,12 @@ int isPowerOfTwo(int num){
  *   RETURN VALUE: 0 or -1
  *   SIDE EFFECTS: none.
  */
-int32_t rtc_write(int32_t fd, int32_t* buf, int32_t nbytes)
+int32_t rtc_write(int32_t fd, const void* buf, int32_t nbytes)
 {
     cli();
-    if((buf == NULL) ) return -1;
-    if (rtc_set_rate(buf[0])==-1){
+    int32_t* ret_buf = (int32_t*)buf;
+    if((ret_buf == NULL) ) return -1;
+    if (rtc_set_rate(ret_buf[0])==-1){
         printf("please use power of two and smaller than 1024");
     }
     sti();
