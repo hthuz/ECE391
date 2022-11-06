@@ -24,7 +24,15 @@ rtc_linkage:
     iret
 
 sys_call_linkage:
-  pushal
+  # Arguments
+  cli;
+  pushl %ebp
+  pushl %edi
+  pushl %esi
+  pushl %edx
+  pushl %ecx
+  pushl %ebx
+
   # Check system call number
   cmpl $1,%eax
   jl syscall_error
@@ -33,11 +41,23 @@ sys_call_linkage:
 
   # Call system call function
   call *sys_call_table(,%eax,4)
-  popal
+  popl %ebx
+  popl %ecx
+  popl %edx
+  popl %esi
+  popl %edi
+  popl %ebp
+  sti;
+
   iret
 
 syscall_error:
   movl $-1, %eax
-  popal
+  popl %ebx
+  popl %ecx
+  popl %edx
+  popl %esi
+  popl %edi
+  popl %ebp
   iret
 

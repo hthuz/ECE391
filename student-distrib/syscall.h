@@ -93,7 +93,8 @@ void set_process_paging(int32_t pid);
 // Get the address of PCB for a process
 pcb_t* get_pcb(int32_t pid);
 
-
+// Initialize all file arrays
+void optable_init();
 
 #endif
 
