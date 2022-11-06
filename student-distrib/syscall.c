@@ -158,6 +158,10 @@ int32_t write(int32_t fd, const void* buf, int32_t nbytes)
  */
 int32_t open(const uint8_t* filename)
 {
+  optable_t rtc_optable;
+  optable_t file_optable;
+  optable_t dir_optable;
+
   int i;
   pcb_t* curr = current_pcb;
   dentry_t curr_dentry;
@@ -194,24 +198,27 @@ int32_t open(const uint8_t* filename)
   {
   case CASE_RTC:
     curr->farray[fd].inode = -1;
-    curr->farray[fd].optable_ptr->open = &rtc_open;
-    curr->farray[fd].optable_ptr->close = &rtc_close;
-    curr->farray[fd].optable_ptr->read = &rtc_read;
-    curr->farray[fd].optable_ptr->write = &rtc_write;
+    rtc_optable.open = rtc_open;
+    rtc_optable.close = rtc_close;
+    rtc_optable.read = rtc_read;
+    rtc_optable.write = rtc_write;
+    curr->farray[fd].optable_ptr = &rtc_optable;
     break;
   case CASE_FILE:
     curr->farray[fd].inode = curr_dentry.inode;
-    curr->farray[fd].optable_ptr->open = &file_open;
-    curr->farray[fd].optable_ptr->close = &file_close;
-    curr->farray[fd].optable_ptr->read = &file_read;
-    curr->farray[fd].optable_ptr->write = &file_write;
+    file_optable.open = file_open;
+    file_optable.close = file_close;
+    file_optable.read = file_read;
+    file_optable.write = file_write;
+    curr->farray[fd].optable_ptr = &file_optable;
     break;
   case CASE_DIR:
     curr->farray[fd].inode = curr_dentry.inode;
-    curr->farray[fd].optable_ptr->open = &directory_open;
-    curr->farray[fd].optable_ptr->close = &directory_close;
-    curr->farray[fd].optable_ptr->read = &directory_read;
-    curr->farray[fd].optable_ptr->write = &directory_write;
+    dir_optable.open = directory_open;
+    dir_optable.close = directory_close;
+    dir_optable.read = directory_read;
+    dir_optable.write = directory_write;
+    curr->farray[fd].optable_ptr = &dir_optable;
     break;
   // case CASE_TERMINAL:
   //   curr->farray[fd].inode = curr_dentry.inode;
