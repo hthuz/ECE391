@@ -21,7 +21,7 @@ extern nodes_block* mynode;
 
 int32_t halt(uint8_t status)
 {
-      int i;
+    int i;
     pcb_t* old_pcb=8*1024*1024 - 8*1024*(cur_pid+1);
     pcb_t* new_pid=old_pcb->parent_pid;
     pcb_t* new_pcb;
@@ -44,8 +44,8 @@ int32_t halt(uint8_t status)
       //(old_pcb->farray[i]).optable_ptr=???;
     }
 // Jump to execute return
-    uint32_t my_esp;
-    uint32_t my_ebp;
+    uint32_t my_esp=old_pcb->saved_esp;
+    uint32_t my_ebp->saved_ebp;
     uint32_t result= (uint32_t*)status;
     asm volatile ( 
             "movl %%ebx, %%ebp    ;"
