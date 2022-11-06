@@ -14,7 +14,16 @@
 #define EXE_MAGIC4 0x46
 
 
+#define FARRAY_SIZE 8
+#define US_START 0x08000000  // user space start
+#define US_END 0x08400000  // user space end
+
 #define PROG_IMAGE_ADDR 0x08048000
+
+#define CASE_RTC 0
+#define CASE_FILE 1
+#define CASE_DIR 2
+// #define CASE_TERMINAL 3
 
 
 typedef struct optable_t
