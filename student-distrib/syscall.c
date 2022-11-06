@@ -44,6 +44,7 @@ int32_t execute(const uint8_t* command)
   nodes_block* inode;         // inode of program file
   uint8_t buf[FHEADER_LEN];   // buf containing bytes of the file
   int32_t entry_pt;           // Entry point into the program (EIP)
+  int32_t user_esp;           // ESP for user program
   
   // Parse args
   if(command == NULL)
@@ -100,30 +101,24 @@ int32_t execute(const uint8_t* command)
 
   // Prepare for Context Switch  
   // Entry point is sotred in bytes 24-27 of the executable
-  int32_t user_esp = P_128M_SIZE + P_4M_SIZE - 4;
-  entry_pt = (buf[24] << 24 ) | (buf[25] << 16) | (buf[26] << 8) | buf[27];
+  user_esp = P_128M_SIZE + P_4M_SIZE - 4;
+  entry_pt = (buf[27] << 24) | (buf[26] << 16) | (buf[25] << 8) | (buf[24]);
 
 
   // Push IRET context to kernel stack
-/*
- *
- *  asm volatile(
- *      "movw %%ax, %%ds;"
- *      "pushl %%eax;"
- *      "pushl %%ebx;"
- *      "pushfl;"
- *      "pushl %%ecx;"
- *      "pushl %%edx;"
- *      "iret;"
- *      :
- *      :"a"(USER_DS),"b"(user_esp),"c"(USER_CS),"d"(entry_pt)
- *      :"cc","memory"
- *  );
- *  
- *
- *
- */
-
+  // Reference: https://wiki.osdev.org/Getting_to_Ring_3
+  asm volatile(
+      "movw %%ax, %%ds;"
+      "pushl %%eax;"
+      "pushl %%ebx;"
+      "pushfl;"
+      "pushl %%ecx;"
+      "pushl %%edx;"
+      "iret;"
+      :
+      :"a"(USER_DS),"b"(user_esp),"c"(USER_CS),"d"(entry_pt)
+      :"cc","memory"
+  );
   return 0;
 }
 
@@ -315,6 +310,7 @@ void set_process_paging(int32_t pid)
   p_dir[index].present = 1;
   p_dir[index].page_size = 1;
   p_dir[index].cache_dis = 1;
+  p_dir[index].u_su = 1;
   p_dir[index].base_addr = (((pid + 2) * P_4M_SIZE) >> 12);
 
   // flush TLB

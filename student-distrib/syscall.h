@@ -26,6 +26,21 @@
 // #define CASE_TERMINAL 3
 
 
+// Temporary use
+#define USER_MEM            0x08000000
+#define USER_PROCESS_ADDR   0x08048000
+#define USER_MEM_END        0x08400000      //132 MB
+#define KERNAL_STACK_SIZE   0x2000          //8KB memory for PCB
+#define KERNAL_MEM_END      0x800000        //8MB end of kenal memory
+#define USER_STACK_SIZE     0x400000        //4MB
+
+/* constant used in offset */
+#define OFFSET_22 22
+#define USER_MEM_PDE_INDEX 32
+#define EIP_OFFSET  24
+#define STACK_FENCE 4
+#define MEM_COPY_BASE_ADDR      0x8048000
+
 typedef struct optable_t
 {
    int32_t (*read)(int32_t fd, void* buf, int32_t nbytes);
