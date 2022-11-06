@@ -53,7 +53,8 @@ typedef struct pcb_t
   uint32_t pid;
   uint32_t parent_pid;
   fentry_t farray[8];
-  
+  uint32_t saved_esp;
+  uint32_t saved_ebp;
 
 }pcb_t;
 
@@ -73,6 +74,9 @@ int32_t sigreturn(void);
 // Helper functions
 // Set up paging for a process
 void set_process_paging(int32_t pid);
+
+// Get the address of PCB for a process
+pcb_t* get_pcb(int32_t pid);
 
 
 
