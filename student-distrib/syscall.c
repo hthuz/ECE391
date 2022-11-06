@@ -32,10 +32,12 @@ int32_t halt(uint8_t status)
 int32_t execute(const uint8_t* command)
 {
   pcb_t* pcb;        // PCB of program
+  optable_t stdin_optable;
+  optable_t stdout_optable;  //operation table for stdin and stdout
   dentry_t dentry;  // dentry of program file
   nodes_block* inode; // inode of program file
   uint8_t buf[FHEADER_LEN];     // buf containing bytes of the file
-  int32_t i;
+  int32_t entry_pt;     // Entry point into the program (EIP)
   
   // Parse args
   if(command == NULL)
@@ -60,7 +62,8 @@ int32_t execute(const uint8_t* command)
   read_data(dentry.inode,0,(uint8_t*)PROG_IMAGE_ADDR,inode->length);
 
   // Create PCB
-  pcb = (pcb_t*)(P_4M_SIZE * 2 - (cur_pid + 1) * P_4K_SIZE);
+  pcb = (pcb_t*)(P_4M_SIZE * 2 - (cur_pid + 1) * P_4K_SIZE * 2); 
+  
   if(cur_pid == 0)
     pcb->parent_pid = 0;
   else
@@ -69,19 +72,24 @@ int32_t execute(const uint8_t* command)
   cur_pid++;
 
   // File array for stdin
+  stdin_optable.open = &terminal_open;
+  stdin_optable.read = &terminal_read;
+  stdin_optable.write = 0;
+  stdin_optable.close = &terminal_close;
+  pcb->farray[0].optable_ptr = &stdin_optable;
   pcb->farray[0].flags = 1;
-  pcb->farray[0].optable_ptr->open = &terminal_open;
-  pcb->farray[0].optable_ptr->read = &terminal_read;
-  pcb->farray[0].optable_ptr->write = 0;
-  pcb->farray[0].optable_ptr->close = &terminal_close;
 
   // File array for stdout
+  stdout_optable.open = &terminal_open;
+  stdout_optable.read = 0;
+  stdout_optable.write = &terminal_write;
+  stdout_optable.close = &terminal_close;
+  pcb->farray[1].optable_ptr = &stdout_optable;
   pcb->farray[1].flags = 1;
-  pcb->farray[1].optable_ptr->open = &terminal_open;
-  pcb->farray[1].optable_ptr->read = 0;
-  pcb->farray[1].optable_ptr->write = &terminal_write;
-  pcb->farray[1].optable_ptr->close = &terminal_close;
   
+  // Prepare for Context Switch  
+  // Entry point is sotred in bytes 24-27 of the executable
+  entry_pt = (buf[24] << 24 ) | (buf[25] << 16) | (buf[26] << 8) | buf[27]
 
 
   
@@ -159,6 +167,16 @@ void set_process_paging(int32_t pid)
   p_dir[index].page_size = 1;
   p_dir[index].cache_dis = 1;
   p_dir[index].base_addr = (((pid + 2) * P_4M_SIZE) >> 12);
+
+  // flush TLB
+  asm volatile (
+    "movl %%cr3, %%eax;"
+    "movl %%eax, %%cr3;"
+    :
+    :
+    :"%eax"
+  );
+
 }
 
 
