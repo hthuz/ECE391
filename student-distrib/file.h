@@ -2,6 +2,7 @@
 #define _FILE_H
 
 #include "types.h"
+#include "syscall.h"
 // magic number of file.h
 #define length_of_data_index        1023
 #define boot_reserved     13
@@ -63,13 +64,13 @@ void init_file_table(int32_t fd);
 int file_open(const uint8_t* fname);
 int file_close(int32_t fd);
 int file_write();
-int file_read(int32_t fd, uint32_t count, uint8_t* buf);
+int file_read(int32_t fd, void* buf, int32_t nbytes);
 
 //directory functions
 int directory_open(const uint8_t* fname);
 int directory_close();
 int directory_write();
-int directory_read(int32_t fd, uint8_t* buf);
+int directory_read(int32_t fd,void* buf, int32_t nbytes);
 
 // helper functions
 

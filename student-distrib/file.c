@@ -1,6 +1,10 @@
 #include "file.h"
 #include "types.h"
 #include "lib.h"
+#include "syscall.h"
+#include "paging.h"
+
+int32_t cur_pid = 0;
 
 uint32_t  dir_file_read;
 boot_block* myboot;
@@ -286,22 +290,23 @@ int file_write(){
  * RETURN VALUE: 0 if succeed, -1 if fail, 1 if come to the end
  * SIDE EFFECT: read and add the postion
 */
-/*
- *int file_read(int32_t fd, uint32_t unit, uint8_t* buf){
- *    int32_t result=0;
- *    uint32_t ino=my_file_table[fd].inode;
- *    uint32_t pos=my_file_table[fd].file_position;
- *    // printf("pos is:%d\n",pos);
- *    if (buf==NULL) return -1;
- *    result=read_data (ino, pos, buf, unit);
- *    if (result==-1) return -1;
- *    // printf("%s",buf);
- *    if (result==0) return 1;
- *    my_file_table[fd].file_position+=unit;
- *    return 0;
- *}
- *
- */
+int32_t file_read(int32_t fd, void* buf, int32_t nbytes){
+    pcb_t* curr_pcb = ((pcb_t*)(P_4M_SIZE * 2 - (cur_pid + 1) * P_4K_SIZE * 2));
+    if(curr_pcb->farray[fd].flags == 0) return -1;
+
+    int32_t result=0;
+    uint32_t ino = curr_pcb->farray[fd].inode;
+    uint32_t pos = curr_pcb->farray[fd].f_pos;
+    //  // printf("pos is:%d\n",pos);
+    //  if (buf==NULL) return -1;
+     result=read_data (ino, pos, (uint8_t*)buf, nbytes);
+     if(result > 0) curr_pcb->farray[fd].f_pos += result;
+    //  if (result==-1) return -1;
+    //  // printf("%s",buf);
+    //  if (result==0) return 1;
+    //  my_file_table[fd].file_position+=unit;
+     return result;
+ }
 
 /*
  * DESCRIPTION: 
@@ -353,20 +358,21 @@ int directory_write(){
  * RETURN VALUE: 0 if nothing happens, 1 if come to the end
  * SIDE EFFECT: none
 */
-int directory_read(int32_t fd, uint8_t* buf){
+int32_t directory_read(int32_t fd, void* buf, int32_t nbytes){
     // printf("\ncome to dir_read  ");
     dentry_t dentry_test;
 	nodes_block* test_node;
 	int32_t i;
 	uint32_t helloinode;
 	uint32_t filelength;
+    uint8_t* ret_buf = (uint8_t*)buf;
     read_dentry_by_index(dir_file_read,&dentry_test);
     helloinode=dentry_test.inode;
     test_node=(nodes_block*) (mynode+helloinode);
     filelength=test_node->length;
     // must use putc here, printf would like to find the '\0'
     for (i=0;i<NameLen ;i++){
-        buf[i]=dentry_test.filename[i];
+        ret_buf[i]=dentry_test.filename[i];
     }
     dir_file_read++;
     if (dir_file_read==myboot->num_dir_entries) return 1; // come to the end
