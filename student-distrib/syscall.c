@@ -6,6 +6,7 @@
 #include "paging.h"
 #include "terminal.h"
 #include "rtc.h"
+#include "x86_desc.h"
 
 #define succsess 0;
 #define fail -1;
@@ -72,13 +73,14 @@ int32_t halt(uint8_t status)
  */
 int32_t execute(const uint8_t* command)
 {
-  pcb_t* pcb;        // PCB of program
+  pcb_t* pcb;                 // PCB of program
   optable_t stdin_optable;
-  optable_t stdout_optable;  //operation table for stdin and stdout
-  dentry_t dentry;  // dentry of program file
-  nodes_block* inode; // inode of program file
-  uint8_t buf[FHEADER_LEN];     // buf containing bytes of the file
-  int32_t entry_pt;     // Entry point into the program (EIP)
+  optable_t stdout_optable;   //operation table for stdin and stdout
+  dentry_t dentry;            // dentry of program file
+  nodes_block* inode;         // inode of program file
+  uint8_t buf[FHEADER_LEN];   // buf containing bytes of the file
+  int32_t entry_pt;           // Entry point into the program (EIP)
+  int32_t user_esp;           // ESP for user program
   
   // Parse args
   if(command == NULL)
@@ -103,7 +105,7 @@ int32_t execute(const uint8_t* command)
   read_data(dentry.inode,0,(uint8_t*)PROG_IMAGE_ADDR,inode->length);
 
   // Create PCB
-  pcb = (pcb_t*)(P_4M_SIZE * 2 - (cur_pid + 1) * P_4K_SIZE * 2); 
+  pcb = get_pcb(cur_pid);
   
   if(cur_pid == 0)
     pcb->parent_pid = 0;
@@ -128,15 +130,31 @@ int32_t execute(const uint8_t* command)
   pcb->farray[1].optable_ptr = &stdout_optable;
   pcb->farray[1].flags = 1;
   
+  register uint32_t saved_ebp asm("ebp");
+  register uint32_t saved_esp asm("esp");
+  pcb->saved_ebp = saved_ebp;
+  pcb->saved_esp = saved_esp;
+
   // Prepare for Context Switch  
   // Entry point is sotred in bytes 24-27 of the executable
-  entry_pt = (buf[24] << 24 ) | (buf[25] << 16) | (buf[26] << 8) | buf[27]
+  user_esp = P_128M_SIZE + P_4M_SIZE - 4;
+  entry_pt = (buf[27] << 24) | (buf[26] << 16) | (buf[25] << 8) | (buf[24]);
 
 
-  
-
-
-
+  // Push IRET context to kernel stack
+  // Reference: https://wiki.osdev.org/Getting_to_Ring_3
+  asm volatile(
+      "movw %%ax, %%ds;"
+      "pushl %%eax;"
+      "pushl %%ebx;"
+      "pushfl;"
+      "pushl %%ecx;"
+      "pushl %%edx;"
+      "iret;"
+      :
+      :"a"(USER_DS),"b"(user_esp),"c"(USER_CS),"d"(entry_pt)
+      :"cc","memory"
+  );
   return 0;
 }
 
@@ -328,6 +346,7 @@ void set_process_paging(int32_t pid)
   p_dir[index].present = 1;
   p_dir[index].page_size = 1;
   p_dir[index].cache_dis = 1;
+  p_dir[index].u_su = 1;
   p_dir[index].base_addr = (((pid + 2) * P_4M_SIZE) >> 12);
 
   // flush TLB
@@ -341,5 +360,9 @@ void set_process_paging(int32_t pid)
 
 }
 
+pcb_t* get_pcb(int32_t pid)
+{
+  return (pcb_t*)(P_4M_SIZE * 2 - (pid + 1) * P_4K_SIZE * 2); 
+}
 
 
