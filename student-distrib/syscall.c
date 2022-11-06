@@ -20,6 +20,42 @@ extern nodes_block* mynode;
 
 int32_t halt(uint8_t status)
 {
+      int i;
+    pcb_t* old_pcb=8*1024*1024 - 8*1024*(cur_pid+1);
+    pcb_t* new_pid=old_pcb->parent_pid;
+    pcb_t* new_pcb;
+    new_pcb= 8*1024*1024 - 8*1024*(old_pcb->parent_pid+1);
+// Restore parent data
+    if (cur_pid==0){
+      printf("just restart the shell");
+      excute("shell");  //need change
+      // initialize the value in this file?
+    }
+    // initialize the global variable in syscall.c
+    cur_pid=new_pid;
+// Restore parent paging
+    set_process_paging(new_pid);   //flushing TLB has been contained.
+// Close any relevant FDs
+    for (i=0;i<=7;i++){
+      (old_pcb->farray[i]).flags=0;
+      (old_pcb->farray[i]).f_pos=0;
+      (old_pcb->farray[i]).inode=0;
+      //(old_pcb->farray[i]).optable_ptr=???;
+    }
+// Jump to execute return
+    uint32_t my_esp;
+    uint32_t my_ebp;
+    uint32_t result= (uint32_t*)status;
+    asm volatile ( 
+            "movl %%ebx, %%ebp    ;"
+            "movl %%ecx, %%esp    ;"
+            "movl %%edx, %%eax    ;"
+            "leave   ;"
+            "ret     ;"
+            :
+            :"c"(my_esp),"b"(my_ebp),"d"(result)
+            :"eax","esp","ebp"
+    );
   return 0;
 }
 
