@@ -5,6 +5,11 @@
 #include "lib.h"
 #include "paging.h"
 #include "terminal.h"
+#include "rtc.h"
+
+#define succsess 0;
+#define fail -1;
+#define current_pcb ((pcb_t*)(P_4M_SIZE * 2 - (cur_pid + 1) * P_4K_SIZE * 2))
 
 
 int32_t cur_pid = 0;
@@ -91,28 +96,142 @@ int32_t execute(const uint8_t* command)
   return 0;
 }
 
+/*
+ *  int32_t read(int32_t fd, void* buf, int32_t nbytes)
+ *  DESCRIPTION: call the read function based on the file type             
+ *  INPUTS: int32_t fd  - the file descriptor
+ *          void* buf - ptr to the buffer
+ *          int32_t nbytes - the length of the bytes to read
+ *  OUTPUTS: read function
+ *  RETURN VALUE: return fd for SUCCESS, -1 for fail
+ */ 
 int32_t read(int32_t fd, void* buf, int32_t nbytes)
 {
+  pcb_t* curr = current_pcb;
+  // if fd=0 or fd is out of the range return fail
+  if(fd==1 || fd<0 || fd>FARRAY_SIZE) return fail;
+  //check if ptr is in user space
+  if((int)buf<US_START || (int)buf+nbytes>US_END) return fail;
+  //check flag and read function
+  if(!curr->farray[fd].flags) return fail;
+  if(!curr->farray[fd].optable_ptr->read==NULL) return fail;
   
-  return 0;
+  return curr->farray[fd].optable_ptr->read(fd,buf,nbytes); //(fd,file_array[fd].file_position,buf,nbytes)
 }
 
+/*
+ *  write(int32_t fd, const void* buf, int32_t nbytes)
+ *  DESCRIPTION: call the write function          
+ *  INPUTS: int32_t fd  - the file descriptor
+ *          void* buf - ptr to the buffer
+ *          int32_t nbytes - the length of the bytes to write
+ *  OUTPUTS: write function
+ *  RETURN VALUE: return fd for SUCCESS, -1 for fail
+ */
 int32_t write(int32_t fd, const void* buf, int32_t nbytes)
 {
+  pcb_t* curr = current_pcb;
+  // some check to avoid invalid situations
+  if(fd<=0 || fd>=FARRAY_SIZE || buf==NULL) return fail;
+  if(!curr->farray[fd].flags) return fail;
+  if(!curr->farray[fd].optable_ptr->write==NULL) return fail;
+  //check if ptr is in user space
+  if((int)buf<US_START || (int)buf+nbytes>US_END) return fail;
 
-  return 0;
+  return curr->farray[fd].optable_ptr->write(fd,buf,nbytes);
 }
 
+/*
+ *  int32_t open (const uint8_t* filename)
+ *  DESCRIPTION: fill the one free entry of file array with the file                
+ *  INPUTS: the file name which want to open
+ *  OUTPUTS: NONE
+ *  RETURN VALUE: return fd for success, -1 for fail
+ */
 int32_t open(const uint8_t* filename)
 {
+  int i;
+  pcb_t* curr = current_pcb;
+  dentry_t curr_dentry;
+  // init fd to be -1
+  int fd = -1; 
+  // check if filename is valid to open
+  if(filename == NULL || (int)filename<US_START || (int)filename>US_END) return fail;
+  // check if the filename is exist by read_dentry_by_name function
+  if(read_dentry_by_name(filename, &curr_dentry)==-1) 
+  {
+    printf("we cannot find such file");
+    return fail;
+  }
+  // find the table which is not using
+  for(i=0; i<FARRAY_SIZE; i++)
+  {
+    if(curr->farray[i].flags == 0)
+    {
+      fd =i;
+      break;
+    }
+  }
+  // if fd is -1, no descripto is free now 
+  if(fd==-1) 
+  {
+    printf("no descriptor is free now");
+    return fail;
+  }
+  // according to the found fd, set position and flag
+  curr->farray[fd].f_pos = 0;
+  curr->farray[fd].flags = 1;
 
-  return 0;
+  switch (curr_dentry.filetype)
+  {
+  case CASE_RTC:
+    curr->farray[fd].inode = -1;
+    curr->farray[fd].optable_ptr->open = &rtc_open;
+    curr->farray[fd].optable_ptr->close = &rtc_close;
+    curr->farray[fd].optable_ptr->read = &rtc_read;
+    curr->farray[fd].optable_ptr->write = &rtc_write;
+    break;
+  case CASE_FILE:
+    curr->farray[fd].inode = curr_dentry.inode;
+    curr->farray[fd].optable_ptr->open = &file_open;
+    curr->farray[fd].optable_ptr->close = &file_close;
+    curr->farray[fd].optable_ptr->read = &file_read;
+    curr->farray[fd].optable_ptr->write = &file_write;
+    break;
+  case CASE_DIR:
+    curr->farray[fd].inode = curr_dentry.inode;
+    curr->farray[fd].optable_ptr->open = &directory_open;
+    curr->farray[fd].optable_ptr->close = &directory_close;
+    curr->farray[fd].optable_ptr->read = &directory_read;
+    curr->farray[fd].optable_ptr->write = &directory_write;
+    break;
+  // case CASE_TERMINAL:
+  //   curr->farray[fd].inode = curr_dentry.inode;
+  //   curr->farray[fd].optable_ptr->open = &terminal_open;
+  //   curr->farray[fd].optable_ptr->close = &terminal_close;
+  //   curr->farray[fd].optable_ptr->read = &terminal_read;
+  //   curr->farray[fd].optable_ptr->write = &terminal_write;
+  //   break;
+  }
+  return fd;
 }
 
+/*
+ *  int32_t close (int32_t fd)
+ *  DESCRIPTION: the system call function to close                
+ *  INPUTS: the file name which it want to closse
+ *  OUTPUTS: file array filled with entry
+ *  RETURN VALUE: should return fd for SUCCESS, -1 for fail
+ */
 int32_t close(int32_t fd)
 {
-
-  return 0;
+  pcb_t* curr = current_pcb;
+  // first check; return fail for invailid index, try to closed default or orig closed
+  if( fd<=1 || fd>=FARRAY_SIZE || curr->farray[fd].flags==0) return fail;
+  
+  // closed
+  curr->farray[fd].flags = 0; // 0 means inactive
+  return curr->farray[fd].optable_ptr->close(fd);
 }
 
 /* To be done */
