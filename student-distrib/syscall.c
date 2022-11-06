@@ -24,6 +24,52 @@ optable_t rtc_optable;
 optable_t file_optable;
 optable_t dir_optable;
 
+
+
+int32_t halt(uint8_t status)
+{
+    int i;
+    pcb_t* old_pcb=get_pcb(cur_pid);
+    int32_t new_pid=old_pcb->parent_pid;
+    pcb_t* new_pcb;
+// Restore parent data
+    // if it is the original shell
+    if (new_pid==-1){
+      printf("cannot halt the original shell");
+      cur_pid = 0;
+      excute("shell");
+    }
+    // else, calculate the parent pcb
+    new_pcb= get_pcb(old_pcb->parent_pid);
+    // initialize the global variable in syscall.c
+    cur_pid=new_pid;
+    tss.ss0= KERNEL_DS;
+    tss.esp0= 8*1024*1024 - new_pid*8*1024 - 4;
+// Restore parent paging
+    set_process_paging(new_pid);   //flushing TLB has been contained.
+// Close any relevant FDs
+    for (i=0;i<=7;i++){
+      (old_pcb->farray[i]).flags=0;
+      (old_pcb->farray[i]).f_pos=0;
+      (old_pcb->farray[i]).inode=0;
+    }
+// Jump to execute return
+    uint32_t my_esp=new_pcb->saved_esp;
+    uint32_t my_ebp=new_pcb->saved_ebp;
+    uint32_t result= (uint32_t) status;
+    asm volatile ( 
+            "movl %%ebx, %%ebp    ;"
+            "movl %%ecx, %%esp    ;"
+            "movl %%edx, %%eax    ;"
+            "leave   ;"
+            "ret     ;"
+            :
+            :"c"(my_esp),"b"(my_ebp),"d"(result)
+            :"eax","esp","ebp"
+    );
+  return 0;
+}
+
 /*
  * execute
  *   DESCRIPTION: load and execute a program, handing off
