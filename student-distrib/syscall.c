@@ -12,9 +12,7 @@
 #define fail -1;
 
 // Initially, there is no process, denote as -1
-int32_t cur_pid = 0;
-int32_t parent_pid = 0;
-int32_t pid_array[MAX_PROC_NUM] = {0};
+int32_t cur_pid = -1;
 
 extern pde_t p_dir[PDE_NUM] __attribute__((aligned (P_4K_SIZE)));
 extern nodes_block* mynode;
@@ -24,7 +22,6 @@ optable_t stdout_optable;   //operation table for stdin and stdout
 optable_t rtc_optable;
 optable_t file_optable;
 optable_t dir_optable;
-optable_t null_optable;
 
 int32_t halt(uint8_t status)
 { 
@@ -33,37 +30,27 @@ int32_t halt(uint8_t status)
     // Restore parent data
     // if it is the original shell
     if ( cur_pid == 0 ){
-      printf("cannot halt the original shell\n");
-      cur_pid = 0;
-      parent_pid = 0;
-      pid_array[0] = 0;
+      printf("Can't exit base shell\n");
+      cur_pid = -1;
       execute((uint8_t*)"shell");
     }
 
     pcb_t* parent_pcb = get_pcb(cur_pcb->parent_pid);
     // Note now cur_pid has become parent_pid
     cur_pid = cur_pcb->parent_pid;
-    parent_pid = parent_pcb->parent_pid;
-    pid_array[cur_pcb->pid] = 0;
     
     tss.ss0= KERNEL_DS;
-    tss.esp0= 8*1024*1024 - parent_pcb->pid*8*1024 - 4;
+    tss.esp0= P_4M_SIZE * 2 - parent_pcb->pid * 2 * P_4K_SIZE - sizeof(int32_t);
     // Restore parent paging
     set_process_paging(cur_pid);   //flushing TLB has been contained.
     // Close any relevant FDs
-    for (i=0;i<=7;i++){
+    for (i=0;i < FARRAY_SIZE;i++){
       (cur_pcb->farray[i]).flags=0;
     }
-// Jump to execute return
+    // Jump to execute return
     uint32_t my_esp=cur_pcb->saved_esp;
     uint32_t my_ebp=cur_pcb->saved_ebp;
     uint32_t result= (uint32_t) status;
-    /*
-     *printf("my_esp=%x\n",my_esp);
-     *printf("my_ebp=%x\n",my_ebp);
-     *printf("result=%d\n",result);
-     *printf("checkout\n");
-     */
     asm volatile ( 
             "movl %%ebx, %%ebp    ;"
             "movl %%ecx, %%esp    ;"
@@ -74,7 +61,6 @@ int32_t halt(uint8_t status)
             :"c"(my_esp),"b"(my_ebp),"d"(result)
             :"eax","ebp","esp"
     );
-  // halt_ret(my_ebp,my_esp,status);
   return 0;
 }
 
@@ -92,6 +78,7 @@ int32_t halt(uint8_t status)
 int32_t execute(const uint8_t* command)
 {
   pcb_t* pcb;                 // PCB of program
+  int32_t parent_pid;         // Record of parent id
   dentry_t dentry;            // dentry of program file
   nodes_block* inode;         // inode of program file
   uint8_t buf[FHEADER_LEN];   // buf containing bytes of the file
@@ -99,8 +86,6 @@ int32_t execute(const uint8_t* command)
   int32_t user_esp;           // ESP for user program
   int32_t i;
 
-
-  
   // Parse args
   if(command == NULL)
     return -1;
@@ -116,25 +101,17 @@ int32_t execute(const uint8_t* command)
   if(buf[0] != EXE_MAGIC1 || buf[1] != EXE_MAGIC2 ||
      buf[2] != EXE_MAGIC3 || buf[3] != EXE_MAGIC4)
     return -1;
+  
+  // record parentid and current id
+  parent_pid = cur_pid;
+  cur_pid++;
 
-  // Get process pid
-  int pid_flag = 0;
-    for(i = 0; i < 8; i++)
-    {
-      if(pid_array[i] == 0)
-      {
-        pid_array[i] = 1;
-        cur_pid = i;
-        pid_flag = 1;
-        break;
-      }
-    }
-
-    if(pid_flag == 0)
-    {
-      printf("pid full");
-      return -1;
-    }
+  if(cur_pid == MAX_PROC_NUM)
+  {
+    cur_pid--;
+    printf("Can't create more processes\n");
+    return -1;
+  }
 
   // Set up paging
   set_process_paging(cur_pid);
@@ -145,34 +122,19 @@ int32_t execute(const uint8_t* command)
   // Create PCB
   pcb = get_pcb(cur_pid);
   pcb->pid = cur_pid;
-
-  if(cur_pid != 0){
-    pcb->parent_pid = parent_pid;
-    parent_pid = cur_pid;
-  }else
-  {
-    // parent_pid is 0 for process 0
-    pcb->parent_pid = cur_pid;
-  }
+  pcb->parent_pid = parent_pid;
 
   for(i = 0; i < FARRAY_SIZE; i++)
   {
     pcb->farray[i].flags = 0 ;
-    pcb->farray[i].optable_ptr = &null_optable;
-    pcb->farray[i].f_pos = 0;
-    pcb->farray[i].inode = 0;
   }
   // File array for stdin
   pcb->farray[0].optable_ptr = &stdin_optable;
   pcb->farray[0].flags = 1;
-  pcb->farray[0].f_pos = 0;
-  pcb->farray[0].inode = 0;
 
   // File array for stdout
   pcb->farray[1].optable_ptr = &stdout_optable;
   pcb->farray[1].flags = 1;
-  pcb->farray[1].f_pos = 0;
-  pcb->farray[0].inode = 0;
   
   register uint32_t saved_ebp asm("ebp");
   register uint32_t saved_esp asm("esp");
@@ -180,11 +142,12 @@ int32_t execute(const uint8_t* command)
   pcb->saved_esp = saved_esp;
 
   // Prepare for Context Switch  
+  user_esp = P_128M_SIZE + P_4M_SIZE - sizeof(int32_t);
   // Entry point is sotred in bytes 24-27 of the executable
-  user_esp = P_128M_SIZE + P_4M_SIZE - 4;
+  // Use these four bytes as EIP
   entry_pt = (buf[27] << 24) | (buf[26] << 16) | (buf[25] << 8) | (buf[24]);
   tss.ss0 = KERNEL_DS;
-  tss.esp0 = P_4M_SIZE * 2 - (pcb->pid) * 2 * P_4K_SIZE - 4;
+  tss.esp0 = P_4M_SIZE * 2 - (pcb->pid) * 2 * P_4K_SIZE - sizeof(int32_t);
   
   // Push IRET context to kernel stack
   // Reference: https://wiki.osdev.org/Getting_to_Ring_3
@@ -198,7 +161,7 @@ int32_t execute(const uint8_t* command)
       "iret;"
       :
       :"a"(USER_DS),"b"(user_esp),"c"(USER_CS),"d"(entry_pt)
-      :"cc","memory"
+      :"memory"
   );
   return 0;
 }
@@ -422,10 +385,5 @@ void optable_init()
   dir_optable.close = directory_close;
   dir_optable.read = directory_read;
   dir_optable.write = directory_write;
-
-  null_optable.open = 0;
-  null_optable.close = 0;
-  null_optable.read = 0;
-  null_optable.write = 0;
-   
+  
 }

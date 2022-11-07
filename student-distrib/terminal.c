@@ -35,10 +35,6 @@ int32_t terminal_open(const uint8_t* filename)
  */
 int32_t terminal_close(int32_t fd)
 {
-    // if try to close default descriptor
-    if(fd == 0 || fd == 1)
-        return -1;
-    
     return 0;
 }
 
@@ -56,6 +52,8 @@ int32_t terminal_close(int32_t fd)
  */
 int32_t terminal_read(int32_t fd, void* buf, int32_t nbytes)
 {
+    if(buf == NULL)
+      return -1;
 
     // do nothing until enter is pressed
     while(enter_pressed == 0);

@@ -32,10 +32,6 @@ typedef struct optable_t
   int32_t (*write)(int32_t fd, const void* buf, int32_t nbytes);
   int32_t (*open)(const uint8_t* filename);
   int32_t (*close)(int32_t fd);
-  // int32_t (*open)(const uint8_t*);
-  // int32_t (*close)(int32_t fd);
-  // int32_t (*read)(int32_t, void*, int32_t);
-  // int32_t (*write)(int32_t, const void*, int32_t);
 }optable_t;
 
 // File Array Entry structure
@@ -52,11 +48,9 @@ typedef struct pcb_t
 {
   uint32_t pid;
   uint32_t parent_pid;
-  fentry_t farray[8];
+  fentry_t farray[FARRAY_SIZE];
   uint32_t saved_esp;
   uint32_t saved_ebp;
-
-
 }pcb_t;
 
 // System call functions
