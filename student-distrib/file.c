@@ -74,7 +74,8 @@ int32_t read_dentry_by_name (const uint8_t* fname, dentry_t* dentry){
     // search the name in the boot_block
     for (i=0;i<myboot->num_dir_entries;i++){
                 // compare the two names
-        if (strncmp( (const int8_t*)myboot->dir_entries[i].filename, (const int8_t*)fname, mylength)==0){
+        if (strncmp( (const int8_t*)myboot->dir_entries[i].filename, (const int8_t*)fname, mylength)==0 && 
+            strlen((const int8_t*) myboot->dir_entries[i].filename) == mylength){
             // printf("dentry address is %x",dentry);
             dentry->filetype=(myboot->dir_entries[i]).filetype;
             dentry->inode=(myboot->dir_entries[i]).inode;
