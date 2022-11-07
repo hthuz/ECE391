@@ -40,7 +40,9 @@ sys_call_linkage:
   jg syscall_error
 
   # Call system call function
+  sti
   call *sys_call_table(,%eax,4)
+  cli
   popl %ebx
   popl %ecx
   popl %edx

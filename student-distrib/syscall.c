@@ -10,11 +10,12 @@
 
 #define succsess 0;
 #define fail -1;
-#define current_pcb ((pcb_t*)(P_4M_SIZE * 2 - (cur_pid - 1 + 1) * P_4K_SIZE * 2))
-pcb_t* mypcb;
 
-
+// Initially, there is no process, denote as -1
 int32_t cur_pid = 0;
+int32_t parent_pid = 0;
+int32_t pid_array[8] = {0};
+
 extern pde_t p_dir[PDE_NUM] __attribute__((aligned (P_4K_SIZE)));
 extern nodes_block* mynode;
 
@@ -23,35 +24,38 @@ optable_t stdout_optable;   //operation table for stdin and stdout
 optable_t rtc_optable;
 optable_t file_optable;
 optable_t dir_optable;
-
-
+optable_t null_optable;
 
 int32_t halt(uint8_t status)
-{
+{ 
     int i;
-    pcb_t* old_pcb=get_pcb(cur_pid-1);
-    int32_t new_pid=old_pcb->parent_pid;
-    printf ("new_pid=%d",new_pid);
-// Restore parent data
+    pcb_t* cur_pcb = get_pcb(cur_pid);
+    int32_t parent_pid = cur_pcb->parent_pid;
+    // Restore parent data
     // if it is the original shell
-    if (new_pid==-1){
+    if ( cur_pid == 0 ){
       printf("cannot halt the original shell");
       cur_pid = 0;
       execute((uint8_t*)"shell");
     }
-    cur_pid=new_pid;
+
+    pcb_t* parent_pcb = get_pcb(cur_pcb->parent_pid);
+    // Note now cur_pid has become parent_pid
+    cur_pid = cur_pcb->parent_pid;
+    parent_pid = parent_pcb->parent_pid;
+    pid_array[cur_pcb->pid] = 0;
     
     tss.ss0= KERNEL_DS;
-    tss.esp0= 8*1024*1024 - new_pid*8*1024 - 4;
-// Restore parent paging
-    set_process_paging(new_pid);   //flushing TLB has been contained.
-// Close any relevant FDs
+    tss.esp0= 8*1024*1024 - parent_pcb->pid*8*1024 - 4;
+    // Restore parent paging
+    set_process_paging(cur_pid);   //flushing TLB has been contained.
+    // Close any relevant FDs
     for (i=0;i<=7;i++){
-      (old_pcb->farray[i]).flags=0;
+      (cur_pcb->farray[i]).flags=0;
     }
 // Jump to execute return
-    uint32_t my_esp=old_pcb->saved_esp;
-    uint32_t my_ebp=old_pcb->saved_ebp;
+    uint32_t my_esp=cur_pcb->saved_esp;
+    uint32_t my_ebp=cur_pcb->saved_ebp;
     uint32_t result= (uint32_t) status;
     printf("my_esp=%x\n",my_esp);
     printf("my_ebp=%x\n",my_ebp);
@@ -90,8 +94,10 @@ int32_t execute(const uint8_t* command)
   uint8_t buf[FHEADER_LEN];   // buf containing bytes of the file
   int32_t entry_pt;           // Entry point into the program (EIP)
   int32_t user_esp;           // ESP for user program
+  int32_t i;
+
+
   
-  printf("run execute\n");
   // Parse args
   if(command == NULL)
     return -1;
@@ -108,6 +114,25 @@ int32_t execute(const uint8_t* command)
      buf[2] != EXE_MAGIC3 || buf[3] != EXE_MAGIC4)
     return -1;
 
+  // Get process pid
+  int pid_flag = 0;
+  for(i = 0; i < 8; i++)
+  {
+    if(pid_array[i] == 0)
+    {
+      pid_array[i] = 1;
+      cur_pid = i;
+      pid_flag = 1;
+      break;
+    }
+  }
+
+  if(pid_flag == 0)
+  {
+    printf("pid full");
+    return -1;
+  }
+
   // Set up paging
   set_process_paging(cur_pid);
 
@@ -116,21 +141,35 @@ int32_t execute(const uint8_t* command)
 
   // Create PCB
   pcb = get_pcb(cur_pid);
-  
-  if(cur_pid == 0)
-    pcb->parent_pid = 0;
-  else
-    pcb->parent_pid = cur_pid - 1;
   pcb->pid = cur_pid;
-  cur_pid++;
 
+  if(cur_pid != 0){
+    pcb->parent_pid = parent_pid;
+    parent_pid = cur_pid;
+  }else
+  {
+    // parent_pid is 0 for process 0
+    pcb->parent_pid = cur_pid;
+  }
+
+  for(i = 0; i < FARRAY_SIZE; i++)
+  {
+    pcb->farray[i].flags = 0 ;
+    pcb->farray[i].optable_ptr = &null_optable;
+    pcb->farray[i].f_pos = 0;
+    pcb->farray[i].inode = 0;
+  }
   // File array for stdin
   pcb->farray[0].optable_ptr = &stdin_optable;
   pcb->farray[0].flags = 1;
+  pcb->farray[0].f_pos = 0;
+  pcb->farray[0].inode = 0;
 
   // File array for stdout
   pcb->farray[1].optable_ptr = &stdout_optable;
   pcb->farray[1].flags = 1;
+  pcb->farray[1].f_pos = 0;
+  pcb->farray[0].inode = 0;
   
   register uint32_t saved_ebp asm("ebp");
   register uint32_t saved_esp asm("esp");
@@ -144,8 +183,6 @@ int32_t execute(const uint8_t* command)
   tss.ss0 = KERNEL_DS;
   tss.esp0 = P_4M_SIZE * 2 - (pcb->pid) * 2 * P_4K_SIZE - 4;
   
-
-
   // Push IRET context to kernel stack
   // Reference: https://wiki.osdev.org/Getting_to_Ring_3
   asm volatile(
@@ -174,7 +211,7 @@ int32_t execute(const uint8_t* command)
  */ 
 int32_t read(int32_t fd, void* buf, int32_t nbytes)
 {
-  pcb_t* curr = current_pcb;
+  pcb_t* curr = get_pcb(cur_pid);
   // if fd=0 or fd is out of the range return fail
   if(fd==1 || fd<0 || fd>FARRAY_SIZE) return fail;
   //check if ptr is in user space
@@ -197,21 +234,13 @@ int32_t read(int32_t fd, void* buf, int32_t nbytes)
  */
 int32_t write(int32_t fd, const void* buf, int32_t nbytes)
 {
-  pcb_t* curr = current_pcb;
-  mypcb = curr;
-  pcb_t* temp_pcb = get_pcb(cur_pid - 1);
-  printf("curr: %x, curr->farray:%x, curr[fd].optable_ptr: %x, write: %x\n",curr, curr->farray, curr->farray[fd].optable_ptr,curr->farray[fd].optable_ptr->write);
+  pcb_t* curr = get_pcb(cur_pid);
   // some check to avoid invalid situations
-  // printf("if fd is valid\n");
   if(fd<=0 || fd>=FARRAY_SIZE || buf==NULL) return fail;
-  // printf("if flag is valid\n");
   if(!curr->farray[fd].flags) return fail;
-  // printf("if op func is valid\n");
   if(curr->farray[fd].optable_ptr->write==NULL) return fail;
   //check if ptr is in user space
-  // printf("if out of userspace\n") ;
   if((int)buf<US_START || (int)(buf+nbytes)>US_END) return fail;
-  // printf("executing terminal write\n");
   return curr->farray[fd].optable_ptr->write(fd,buf,nbytes);
 }
 
@@ -224,12 +253,8 @@ int32_t write(int32_t fd, const void* buf, int32_t nbytes)
  */
 int32_t open(const uint8_t* filename)
 {
-  optable_t rtc_optable;
-  optable_t file_optable;
-  optable_t dir_optable;
-
   int i;
-  pcb_t* curr = current_pcb;
+  pcb_t* curr = get_pcb(cur_pid);
   dentry_t curr_dentry;
   // init fd to be -1
   int fd = -1; 
@@ -259,6 +284,7 @@ int32_t open(const uint8_t* filename)
   // according to the found fd, set position and flag
   curr->farray[fd].f_pos = 0;
   curr->farray[fd].flags = 1;
+
 
   switch (curr_dentry.filetype)
   {
@@ -294,7 +320,7 @@ int32_t open(const uint8_t* filename)
  */
 int32_t close(int32_t fd)
 {
-  pcb_t* curr = current_pcb;
+  pcb_t* curr = get_pcb(cur_pid);
   // first check; return fail for invailid index, try to closed default or orig closed
   if( fd<=1 || fd>=FARRAY_SIZE || curr->farray[fd].flags==0) return fail;
   
@@ -392,5 +418,10 @@ void optable_init()
   dir_optable.close = directory_close;
   dir_optable.read = directory_read;
   dir_optable.write = directory_write;
+
+  null_optable.open = 0;
+  null_optable.close = 0;
+  null_optable.read = 0;
+  null_optable.write = 0;
    
 }

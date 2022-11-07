@@ -442,7 +442,7 @@ int file_list(){
 	}
 	// clear();
 	while(1){
-		result=directory_read(fd,buffer);
+		result=directory_read(fd,buffer,0);
 		printf("file name:%s\n",buffer);
 		if (result==1) break;
 	}

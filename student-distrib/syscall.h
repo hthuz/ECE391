@@ -21,8 +21,8 @@
 #define PROG_IMAGE_ADDR 0x08048000
 
 #define CASE_RTC 0
-#define CASE_FILE 1
-#define CASE_DIR 2
+#define CASE_FILE 2
+#define CASE_DIR 1
 // #define CASE_TERMINAL 3
 
 
@@ -70,6 +70,7 @@ typedef struct pcb_t
   fentry_t farray[8];
   uint32_t saved_esp;
   uint32_t saved_ebp;
+
 
 }pcb_t;
 
