@@ -4,7 +4,7 @@
 #include "syscall.h"
 #include "paging.h"
 
-int32_t cur_pid = 0;
+extern int32_t cur_pid;
 
 uint32_t  dir_file_read;
 boot_block* myboot;
@@ -291,20 +291,22 @@ int file_write(){
  * SIDE EFFECT: read and add the postion
 */
 int32_t file_read(int32_t fd, void* buf, int32_t nbytes){
-    pcb_t* curr_pcb = ((pcb_t*)(P_4M_SIZE * 2 - (cur_pid + 1) * P_4K_SIZE * 2));
+    pcb_t* curr_pcb = get_pcb(cur_pid);
+    printf("fd is %d, cur_pid is %d, pcb_t is: %x",fd, cur_pid, curr_pcb);
     if(curr_pcb->farray[fd].flags == 0) return -1;
 
     int32_t result=0;
     uint32_t ino = curr_pcb->farray[fd].inode;
     uint32_t pos = curr_pcb->farray[fd].f_pos;
+    printf("inode is %d, pos is %d", ino, pos);
     //  // printf("pos is:%d\n",pos);
-    //  if (buf==NULL) return -1;
+     if (buf==NULL) return -1;
      result=read_data (ino, pos, (uint8_t*)buf, nbytes);
      if(result > 0) curr_pcb->farray[fd].f_pos += result;
-    //  if (result==-1) return -1;
+     if (result==-1) return -1;
     //  // printf("%s",buf);
-    //  if (result==0) return 1;
-    //  my_file_table[fd].file_position+=unit;
+     if (result==0) return 1;
+     curr_pcb->farray[fd].f_pos += nbytes;
      return result;
  }
 
@@ -361,10 +363,10 @@ int directory_write(){
 int32_t directory_read(int32_t fd, void* buf, int32_t nbytes){
     // printf("\ncome to dir_read  ");
     dentry_t dentry_test;
-	nodes_block* test_node;
-	int32_t i;
-	uint32_t helloinode;
-	uint32_t filelength;
+  	nodes_block* test_node;
+	  int32_t i;
+	  uint32_t helloinode;
+	  uint32_t filelength;
     uint8_t* ret_buf = (uint8_t*)buf;
     read_dentry_by_index(dir_file_read,&dentry_test);
     helloinode=dentry_test.inode;
@@ -375,8 +377,8 @@ int32_t directory_read(int32_t fd, void* buf, int32_t nbytes){
         ret_buf[i]=dentry_test.filename[i];
     }
     dir_file_read++;
-    if (dir_file_read==myboot->num_dir_entries) return 1; // come to the end
-    return 0;
+    if (dir_file_read==myboot->num_dir_entries) return 0; // come to the end
+    return nbytes;
 }
 
 

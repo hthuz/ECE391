@@ -10,11 +10,10 @@
 
 #define succsess 0;
 #define fail -1;
-#define current_pcb ((pcb_t*)(P_4M_SIZE * 2 - (cur_pid - 1 + 1) * P_4K_SIZE * 2))
-pcb_t* mypcb;
+#define current_pcb ((pcb_t*)(P_4M_SIZE * 2 - (cur_pid + 1) * P_4K_SIZE * 2))
 
-
-int32_t cur_pid = 0;
+// Initially, there is no process, denote as -1
+int32_t cur_pid = -1;
 extern pde_t p_dir[PDE_NUM] __attribute__((aligned (P_4K_SIZE)));
 extern nodes_block* mynode;
 
@@ -24,6 +23,10 @@ optable_t rtc_optable;
 optable_t file_optable;
 optable_t dir_optable;
 
+int32_t halt(uint8_t status)
+{
+  return 0;
+}
 /*
  * execute
  *   DESCRIPTION: load and execute a program, handing off
@@ -38,13 +41,15 @@ optable_t dir_optable;
 int32_t execute(const uint8_t* command)
 {
   pcb_t* pcb;                 // PCB of program
+  int32_t parent_pid;         // Record parent pid
   dentry_t dentry;            // dentry of program file
   nodes_block* inode;         // inode of program file
   uint8_t buf[FHEADER_LEN];   // buf containing bytes of the file
   int32_t entry_pt;           // Entry point into the program (EIP)
   int32_t user_esp;           // ESP for user program
+
+
   
-  printf("run execute\n");
   // Parse args
   if(command == NULL)
     return -1;
@@ -61,6 +66,10 @@ int32_t execute(const uint8_t* command)
      buf[2] != EXE_MAGIC3 || buf[3] != EXE_MAGIC4)
     return -1;
 
+  // Set parent pid
+  parent_pid = cur_pid;
+  cur_pid++;
+
   // Set up paging
   set_process_paging(cur_pid);
 
@@ -69,13 +78,8 @@ int32_t execute(const uint8_t* command)
 
   // Create PCB
   pcb = get_pcb(cur_pid);
-  
-  if(cur_pid == 0)
-    pcb->parent_pid = 0;
-  else
-    pcb->parent_pid = cur_pid - 1;
   pcb->pid = cur_pid;
-  cur_pid++;
+  pcb->parent_pid = parent_pid;
 
   // File array for stdin
   pcb->farray[0].optable_ptr = &stdin_optable;
@@ -97,8 +101,6 @@ int32_t execute(const uint8_t* command)
   tss.ss0 = KERNEL_DS;
   tss.esp0 = P_4M_SIZE * 2 - (pcb->pid) * 2 * P_4K_SIZE - 4;
   
-
-
   // Push IRET context to kernel stack
   // Reference: https://wiki.osdev.org/Getting_to_Ring_3
   asm volatile(
@@ -151,8 +153,6 @@ int32_t read(int32_t fd, void* buf, int32_t nbytes)
 int32_t write(int32_t fd, const void* buf, int32_t nbytes)
 {
   pcb_t* curr = current_pcb;
-  mypcb = curr;
-  pcb_t* temp_pcb = get_pcb(cur_pid - 1);
   printf("curr: %x, curr->farray:%x, curr[fd].optable_ptr: %x, write: %x\n",curr, curr->farray, curr->farray[fd].optable_ptr,curr->farray[fd].optable_ptr->write);
   // some check to avoid invalid situations
   // printf("if fd is valid\n");
@@ -177,10 +177,6 @@ int32_t write(int32_t fd, const void* buf, int32_t nbytes)
  */
 int32_t open(const uint8_t* filename)
 {
-  optable_t rtc_optable;
-  optable_t file_optable;
-  optable_t dir_optable;
-
   int i;
   pcb_t* curr = current_pcb;
   dentry_t curr_dentry;
@@ -212,6 +208,7 @@ int32_t open(const uint8_t* filename)
   // according to the found fd, set position and flag
   curr->farray[fd].f_pos = 0;
   curr->farray[fd].flags = 1;
+
 
   switch (curr_dentry.filetype)
   {

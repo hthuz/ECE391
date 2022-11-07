@@ -21,8 +21,8 @@
 #define PROG_IMAGE_ADDR 0x08048000
 
 #define CASE_RTC 0
-#define CASE_FILE 1
-#define CASE_DIR 2
+#define CASE_FILE 2
+#define CASE_DIR 1
 // #define CASE_TERMINAL 3
 
 
