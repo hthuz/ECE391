@@ -23,6 +23,16 @@ optable_t rtc_optable;
 optable_t file_optable;
 optable_t dir_optable;
 
+
+/*
+ * halt
+ *   DESCRIPTION: halt a program, if it is the process 0 shell,
+                  reset cur_pid and execute the shell again 
+ *   INPUTS: status -- name of the result to return eax
+ *   OUTPUTS: none
+ *   RETURN VALUE: none
+ *   SIDE EFFECTS: none
+ */
 int32_t halt(uint8_t status)
 { 
     int i;
@@ -44,7 +54,7 @@ int32_t halt(uint8_t status)
     set_process_paging(cur_pid);   //flushing TLB has been contained.
     // Close any relevant FDs
     for (i=0;i < FARRAY_SIZE;i++){
-      (cur_pcb->farray[i]).flags=0;
+      (cur_pcb->farray[i]).flags=0;   // 0 means inactive
     }
     // Jump to execute return
     uint32_t my_esp=cur_pcb->saved_esp;
