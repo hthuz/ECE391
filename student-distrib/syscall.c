@@ -14,7 +14,7 @@
 // Initially, there is no process, denote as -1
 int32_t cur_pid = 0;
 int32_t parent_pid = 0;
-int32_t pid_array[8] = {0};
+int32_t pid_array[MAX_PROC_NUM] = {0};
 
 extern pde_t p_dir[PDE_NUM] __attribute__((aligned (P_4K_SIZE)));
 extern nodes_block* mynode;
@@ -33,8 +33,10 @@ int32_t halt(uint8_t status)
     // Restore parent data
     // if it is the original shell
     if ( cur_pid == 0 ){
-      printf("cannot halt the original shell");
+      printf("cannot halt the original shell\n");
       cur_pid = 0;
+      parent_pid = 0;
+      pid_array[0] = 0;
       execute((uint8_t*)"shell");
     }
 
@@ -56,10 +58,12 @@ int32_t halt(uint8_t status)
     uint32_t my_esp=cur_pcb->saved_esp;
     uint32_t my_ebp=cur_pcb->saved_ebp;
     uint32_t result= (uint32_t) status;
-    printf("my_esp=%x\n",my_esp);
-    printf("my_ebp=%x\n",my_ebp);
-    printf("result=%d\n",result);
-    printf("checkout\n");
+    /*
+     *printf("my_esp=%x\n",my_esp);
+     *printf("my_ebp=%x\n",my_ebp);
+     *printf("result=%d\n",result);
+     *printf("checkout\n");
+     */
     asm volatile ( 
             "movl %%ebx, %%ebp    ;"
             "movl %%ecx, %%esp    ;"
@@ -115,22 +119,22 @@ int32_t execute(const uint8_t* command)
 
   // Get process pid
   int pid_flag = 0;
-  for(i = 0; i < 8; i++)
-  {
-    if(pid_array[i] == 0)
+    for(i = 0; i < 8; i++)
     {
-      pid_array[i] = 1;
-      cur_pid = i;
-      pid_flag = 1;
-      break;
+      if(pid_array[i] == 0)
+      {
+        pid_array[i] = 1;
+        cur_pid = i;
+        pid_flag = 1;
+        break;
+      }
     }
-  }
 
-  if(pid_flag == 0)
-  {
-    printf("pid full");
-    return -1;
-  }
+    if(pid_flag == 0)
+    {
+      printf("pid full");
+      return -1;
+    }
 
   // Set up paging
   set_process_paging(cur_pid);
@@ -307,6 +311,7 @@ int32_t open(const uint8_t* filename)
   //   curr->farray[fd].optable_ptr->write = &terminal_write;
   //   break;
   }
+  curr->farray[fd].optable_ptr->open(filename);
   return fd;
 }
 

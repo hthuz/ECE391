@@ -241,7 +241,6 @@ int32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t lengt
  * SIDE EFFECT: none
 */
 int file_open(const uint8_t* fname){
-    int32_t fd=default_fd;               //default fd
     dentry_t thedentry;
     if (read_dentry_by_name(fname,&thedentry)==-1) return -1;    // fail to find the name
     if (thedentry.filetype!=FILE_TYPE) return -1;              // this is not file
@@ -319,6 +318,7 @@ int32_t file_read(int32_t fd, void* buf, int32_t nbytes){
  * SIDE EFFECT: clear dir_file_read
 */
 int directory_open(const uint8_t* fname){
+  printf("directory_read\n");
     dentry_t thedentry;
     dir_file_read=0;            // used to read file name
     if (read_dentry_by_name(fname,&thedentry)==-1) return -1;    // fail to find the name
