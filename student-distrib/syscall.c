@@ -30,7 +30,6 @@ int32_t halt(uint8_t status)
 { 
     int i;
     pcb_t* cur_pcb = get_pcb(cur_pid);
-    int32_t parent_pid = cur_pcb->parent_pid;
     // Restore parent data
     // if it is the original shell
     if ( cur_pid == 0 ){
