@@ -30,17 +30,16 @@ int32_t halt(uint8_t status)
     // Restore parent data
     // if it is the original shell
     if ( cur_pid == 0 ){
-      printf("Can't exit base shell\n");
+      printf("Can't Exit Base Shell\n");
       cur_pid = -1;
       execute((uint8_t*)"shell");
     }
 
-    pcb_t* parent_pcb = get_pcb(cur_pcb->parent_pid);
     // Note now cur_pid has become parent_pid
     cur_pid = cur_pcb->parent_pid;
     
     tss.ss0= KERNEL_DS;
-    tss.esp0= P_4M_SIZE * 2 - parent_pcb->pid * 2 * P_4K_SIZE - sizeof(int32_t);
+    tss.esp0= K_BASE - cur_pid * K_TASK_STACK_SIZE - sizeof(int32_t);
     // Restore parent paging
     set_process_paging(cur_pid);   //flushing TLB has been contained.
     // Close any relevant FDs
@@ -84,16 +83,16 @@ int32_t execute(const uint8_t* command)
   uint8_t buf[FHEADER_LEN];   // buf containing bytes of the file
   int32_t entry_pt;           // Entry point into the program (EIP)
   int32_t user_esp;           // ESP for user program
-  int32_t i;
+  int32_t i;                  // Index for loop
 
-  // Parse args
+  // 1. Parse args
   if(command == NULL)
     return -1;
   if(read_dentry_by_name(command, &dentry) == -1)
     return -1;
   inode = (nodes_block*) (mynode + dentry.inode);
 
-  // Check for executable
+  // 2. Check for executable
   if(dentry.filetype != FILE_TYPE)
     return -1;
   if(read_data(dentry.inode, 0, buf, FHEADER_LEN) != FHEADER_LEN)
@@ -109,21 +108,24 @@ int32_t execute(const uint8_t* command)
   if(cur_pid == MAX_PROC_NUM)
   {
     cur_pid--;
-    printf("Can't create more processes\n");
+    printf("Can't Create More Processes\n");
     return -1;
   }
 
-  // Set up paging
+  // 3. Set up paging
   set_process_paging(cur_pid);
 
-  // Load file into program image 
+  // 4. Load file into program image 
   read_data(dentry.inode,0,(uint8_t*)PROG_IMAGE_ADDR,inode->length);
 
-  // Create PCB
+  // 5. Create PCB
   pcb = get_pcb(cur_pid);
   pcb->pid = cur_pid;
   pcb->parent_pid = parent_pid;
 
+  // Initialize File array
+  // flag 0: inactive
+  // flag 1: active
   for(i = 0; i < FARRAY_SIZE; i++)
   {
     pcb->farray[i].flags = 0 ;
@@ -135,21 +137,23 @@ int32_t execute(const uint8_t* command)
   // File array for stdout
   pcb->farray[1].optable_ptr = &stdout_optable;
   pcb->farray[1].flags = 1;
-  
+
+  // Store EBP and ESP
   register uint32_t saved_ebp asm("ebp");
   register uint32_t saved_esp asm("esp");
   pcb->saved_ebp = saved_ebp;
   pcb->saved_esp = saved_esp;
 
-  // Prepare for Context Switch  
+  // 6. Prepare for Context Switch  
   user_esp = P_128M_SIZE + P_4M_SIZE - sizeof(int32_t);
-  // Entry point is sotred in bytes 24-27 of the executable
+  // Entry point is stored in bytes 24-27 of the executable
   // Use these four bytes as EIP
   entry_pt = (buf[27] << 24) | (buf[26] << 16) | (buf[25] << 8) | (buf[24]);
+
   tss.ss0 = KERNEL_DS;
-  tss.esp0 = P_4M_SIZE * 2 - (pcb->pid) * 2 * P_4K_SIZE - sizeof(int32_t);
+  tss.esp0 = K_BASE - (pcb->pid) * K_TASK_STACK_SIZE - sizeof(int32_t);
   
-  // Push IRET context to kernel stack
+  // 7. Push IRET context to kernel stack
   // Reference: https://wiki.osdev.org/Getting_to_Ring_3
   asm volatile(
       "movw %%ax, %%ds;"
@@ -335,6 +339,11 @@ int32_t sigreturn(void)
 void set_process_paging(int32_t pid)
 {
   int index;
+
+  // Set 4M paging for process 
+  // Process 0: 8MB - 12MB
+  // Process 1: 12MB - 16MB
+  // and so on
   index = PDE_INDEX(P_128M_SIZE);
   p_dir[index].present = 1;
   p_dir[index].page_size = 1;
@@ -353,12 +362,27 @@ void set_process_paging(int32_t pid)
 
 }
 
+/*
+ * get_pcb
+ *   DESCRIPTION:get the one process's PCB
+ *   INPUTS: pid -- pid of process to get PCB
+ *   OUTPTUS: none
+ *   RETURN VALUE: address of PCB of process
+ *   SIDE EFFECTS: none
+ */
 pcb_t* get_pcb(int32_t pid)
 {
   return (pcb_t*)(P_4M_SIZE * 2 - (pid + 1) * P_4K_SIZE * 2); 
 }
 
-
+/*
+ * optable_init
+ *   DESCRIPTION: initialize all operation tables
+ *   INPUTS: none
+ *   OUTPUTS: none
+ *   RETURN VALUE: none
+ *   SIDE EFFECTS: none
+ */
 void optable_init()
 {
   stdin_optable.open = terminal_open;

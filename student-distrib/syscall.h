@@ -5,6 +5,7 @@
 
 #include "lib.h"
 #include "file.h"
+#include "paging.h"
 
 // A header occupies first 40 bytes that gives information about load and starting
 #define FHEADER_LEN 40
@@ -17,6 +18,8 @@
 #define US_START 0x08000000  // user space start
 #define US_END 0x08400000  // user space end
 
+#define K_TASK_STACK_SIZE (P_4K_SIZE * 2)  // task's kernel stack size
+#define K_BASE (P_4M_SIZE * 2)  // Base address of kernel
 #define PROG_IMAGE_ADDR 0x08048000
 #define MAX_PROC_NUM 6
 
@@ -40,7 +43,7 @@ typedef struct fentry_t
   optable_t* optable_ptr;
   int32_t inode;
   int32_t f_pos;
-  int32_t flags;
+  int32_t flags;  // 0: inactive 1: active
 }fentry_t;
 
 // Process Control Block structure
