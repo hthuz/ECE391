@@ -9,6 +9,7 @@
 
 pde_t p_dir[PDE_NUM] __attribute__((aligned (P_4K_SIZE)));
 pte_t p_table[PTE_NUM] __attribute__((aligned (P_4K_SIZE)));
+pte_t video_p_table[PTE_NUM] __attribute__((aligned (P_4K_SIZE)));
 
 
 
@@ -54,7 +55,19 @@ char paging_init()
     p_table[i].base_addr = 0;    // default 0
   }
 
-
+  for(i = 0; i < PTE_NUM; i++) 
+  {
+    video_p_table[i].present = 0;      // initially unpresent
+    video_p_table[i].r_w = 1;          // mark all pages read/write
+    video_p_table[i].u_su = 0;         // default supervisor only
+    video_p_table[i].write_through = 0;// use write back, always 0
+    video_p_table[i].cache_dis = 0;    // default no cache
+    video_p_table[i].accessed = 0;     // unrelated
+    video_p_table[i].dirty = 0;        // unrelated
+    video_p_table[i].pat = 0;          // unrelated
+    video_p_table[i].avail = 0;        // unrelated
+    video_p_table[i].base_addr = 0;    // default 0
+  }
 
   // paging for video memory
   // set up PTE for video memory

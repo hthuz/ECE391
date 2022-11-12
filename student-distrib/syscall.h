@@ -73,6 +73,9 @@ int32_t sigreturn(void);
 // Set up paging for a process
 void set_process_paging(int32_t pid);
 
+// Set up paging for a process's vidmap
+void set_vidmap_paging();
+
 // Get the address of PCB for a process
 pcb_t* get_pcb(int32_t pid);
 

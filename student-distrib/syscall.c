@@ -56,6 +56,9 @@ int32_t halt(uint8_t status)
     for (i=0;i < FARRAY_SIZE;i++){
       (cur_pcb->farray[i]).flags=0;   // 0 means inactive
     }
+
+    // close the relevant video memory
+    
     // Jump to execute return
     uint32_t my_esp=cur_pcb->saved_esp;
     uint32_t my_ebp=cur_pcb->saved_ebp;
@@ -313,14 +316,24 @@ int32_t close(int32_t fd)
 /* To be done */
 int32_t getargs(uint8_t* buf, int32_t nbytes)
 {
-
   return 0;
 }
 
-/* To be done */
+/*
+ *  int32_t vidmap (uint8_t** screen_start)
+ *  DESCRIPTION: check the false cases, set the vidmap_paging and set the screen_start         
+ *  INPUTS: the pointer screen_start, it stores the virtual address of start of video memory
+ *  OUTPUTS: 0
+ *  RETURN VALUE: should return 0 for SUCCESS, -1 for fail
+ */
 int32_t vidmap(uint8_t** screen_start)
 {
-
+  if (screen_start==NULL) return fail;
+  if ( (uint32_t)screen_start < P_128M_SIZE || (uint32_t)screen_start > 35*P_4M_SIZE) return fail;
+  // 128MB is the start of the program image
+  //set 140MB as the virtual space address of memory
+  set_vidmap_paging();
+  screen_start[0] = (uint32_t*) (35*P_4M_SIZE);
   return 0;
 }
 
@@ -371,6 +384,41 @@ void set_process_paging(int32_t pid)
   );
 
 }
+
+
+
+/*
+ * set_vidmap_paging
+ *   DESCRIPTIOIN: set vidmap paging for program
+ *   INPUTS: pid -- pid of process to set up paging
+ *   OUTPUTS: none
+ *   RETURN VALUE: none
+ *   SIDE EFFECTS: none
+ */
+void set_vidmap_paging()
+{
+  int index=PDE_INDEX(35*P_4M_SIZE); 
+  //140MB is the virtual space address of memory
+  p_dir[index].present = 1;
+  p_dir[index].page_size = 0;
+  p_dir[index].cache_dis = 1;
+  p_dir[index].u_su = 1;
+  p_dir[index].base_addr = ( ((int)video_p_table) >> 12);
+
+  video_p_table[0].base_addr = VID_MEM_START >> 12;  // page is 4k aligned, 
+                                                                        // the address is multiple of 4k
+                                                                        // so lower 12 bits not required
+  video_p_table[0].present = 1;
+  // flush TLB
+  asm volatile (
+    "movl %%cr3, %%eax;"
+    "movl %%eax, %%cr3;"
+    :
+    :
+    :"%eax"
+  );
+}
+
 
 /*
  * get_pcb
