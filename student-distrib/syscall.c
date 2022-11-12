@@ -316,6 +316,12 @@ int32_t close(int32_t fd)
 /* To be done */
 int32_t getargs(uint8_t* buf, int32_t nbytes)
 {
+  // check if in user space
+  if((int)buf < US_START || (int)buf+nbytes>=US_END || buf == NULL) return fail;
+  pcb_t* curr = get_pcb(cur_pid);
+  // check if there are no arguments
+  if(curr->args[0] == NULL) return fail;
+  strncpy((int8_t*)buf, curr->args, nbytes);
   return 0;
 }
 

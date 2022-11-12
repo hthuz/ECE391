@@ -13,6 +13,7 @@
 #define EXE_MAGIC2 0x45
 #define EXE_MAGIC3 0x4c
 #define EXE_MAGIC4 0x46
+#define ARG_LEN 128
 
 #define FARRAY_SIZE 8
 #define US_START 0x08000000  // user space start
@@ -54,6 +55,7 @@ typedef struct pcb_t
   fentry_t farray[FARRAY_SIZE];
   uint32_t saved_esp;
   uint32_t saved_ebp;
+  int8_t args[ARG_LEN];
 }pcb_t;
 
 // System call functions
