@@ -16,8 +16,8 @@
 #define ARG_LEN 128
 
 #define FARRAY_SIZE 8
-#define US_START 0x08000000  // user space start
-#define US_END 0x08400000  // user space end
+#define US_START 0x08000000  // user space start in virtural memory
+#define US_END 0x08400000  // user space end in virtual memory
 
 #define K_TASK_STACK_SIZE (P_4K_SIZE * 2)  // task's kernel stack size
 #define K_BASE (P_4M_SIZE * 2)  // Base address of kernel
@@ -55,7 +55,8 @@ typedef struct pcb_t
   fentry_t farray[FARRAY_SIZE];
   uint32_t saved_esp;
   uint32_t saved_ebp;
-  int8_t args[ARG_LEN];
+  uint8_t args[ARG_LEN];
+  uint32_t use_vid;
 }pcb_t;
 
 // System call functions
@@ -77,6 +78,9 @@ void set_process_paging(int32_t pid);
 
 // Set up paging for a process's vidmap
 void set_vidmap_paging();
+
+// reSet paging for a process's vidmap
+void reset_vidmap_paging();
 
 // Get the address of PCB for a process
 pcb_t* get_pcb(int32_t pid);

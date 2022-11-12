@@ -58,7 +58,10 @@ int32_t halt(uint8_t status)
     }
 
     // close the relevant video memory
-    
+    if (cur_pcb->use_vid==1){
+      cur_pcb->use_vid=0;
+      reset_vidmap_paging();
+    }
     // Jump to execute return
     uint32_t my_esp=cur_pcb->saved_esp;
     uint32_t my_ebp=cur_pcb->saved_ebp;
@@ -97,11 +100,37 @@ int32_t execute(const uint8_t* command)
   int32_t entry_pt;           // Entry point into the program (EIP)
   int32_t user_esp;           // ESP for user program
   int32_t i;                  // Index for loop
-
+  uint8_t sep_file[ARG_LEN];
+  uint8_t sep_arg[ARG_LEN];
+  uint32_t  com_len=0;      // if com_len=6, sep[0-5], and sep[6]='\0'
+  uint32_t  arg_len=0;
+  uint32_t  command_length=strlen((int8_t*)command);
+  
   // 1. Parse args
-  if(command == NULL)
+  // get sep_command
+  // printf("len is:%d\n",command_length);
+  i=0;
+  while (command[i]==' ') i++;
+  while (command[i]!=' ' && command[i]!='\0' && i<=command_length){
+    sep_file[com_len++]=command[i++];
+  }
+  sep_file[com_len]='\0';
+  // printf("sep_file is:%s",sep_file);
+
+  if (command[i]==' '){
+    while (command[i]==' ') i++;
+    while (command[i]!=' ' && command[i]!='\0' && i<=command_length){
+        sep_arg[arg_len++]=command[i++];
+    }
+    sep_arg[arg_len]='\0';
+  }
+  // printf("sep_arg is:%s\n",sep_arg);
+
+
+  // check sep_command
+  if(sep_file == NULL)
     return -1;
-  if(read_dentry_by_name(command, &dentry) == -1)
+  if(read_dentry_by_name(sep_file, &dentry) == -1)
     return -1;
   inode = (nodes_block*) (mynode + dentry.inode);
 
@@ -135,6 +164,12 @@ int32_t execute(const uint8_t* command)
   pcb = get_pcb(cur_pid);
   pcb->pid = cur_pid;
   pcb->parent_pid = parent_pid;
+
+  if (arg_len>0){
+    for (i=0;i<=arg_len;i++) pcb->args[i]=sep_arg[i];
+  }
+  // printf("pcb->args is:%s\n",pcb->args);
+  pcb->use_vid=0;
 
   // Initialize File array
   // flag 0: inactive
@@ -321,7 +356,7 @@ int32_t getargs(uint8_t* buf, int32_t nbytes)
   pcb_t* curr = get_pcb(cur_pid);
   // check if there are no arguments
   if(curr->args[0] == NULL) return fail;
-  strncpy((int8_t*)buf, curr->args, nbytes);
+  strncpy((int8_t*)buf, (int8_t*)curr->args, nbytes);
   return 0;
 }
 
@@ -335,11 +370,13 @@ int32_t getargs(uint8_t* buf, int32_t nbytes)
 int32_t vidmap(uint8_t** screen_start)
 {
   if (screen_start==NULL) return fail;
-  if ( (uint32_t)screen_start < P_128M_SIZE || (uint32_t)screen_start > 35*P_4M_SIZE) return fail;
+  if ( (uint32_t)screen_start < US_START || (uint32_t)screen_start > US_END) return fail;
   // 128MB is the start of the program image
   //set 140MB as the virtual space address of memory
   set_vidmap_paging();
-  screen_start[0] = (uint32_t*) (35*P_4M_SIZE);
+  pcb_t* pcb=get_pcb(cur_pid);   
+  pcb->use_vid=1;
+  screen_start[0] = (uint8_t*) (35*P_4M_SIZE);
   return 0;
 }
 
@@ -407,7 +444,6 @@ void set_vidmap_paging()
   //140MB is the virtual space address of memory
   p_dir[index].present = 1;
   p_dir[index].page_size = 0;
-  p_dir[index].cache_dis = 1;
   p_dir[index].u_su = 1;
   p_dir[index].base_addr = ( ((int)video_p_table) >> 12);
 
@@ -425,6 +461,29 @@ void set_vidmap_paging()
   );
 }
 
+/*
+ * reset_vidmap_paging
+ *   DESCRIPTIOIN: reset vidmap paging for program
+ *   INPUTS: pid -- pid of process to set up paging
+ *   OUTPUTS: none
+ *   RETURN VALUE: none
+ *   SIDE EFFECTS: none
+ */
+void reset_vidmap_paging()
+{
+  int index=PDE_INDEX(35*P_4M_SIZE); 
+  //140MB is the virtual space address of memory
+  p_dir[index].present = 0;
+  p_dir[index].page_size = 0;
+  p_dir[index].u_su = 0;
+  p_dir[index].base_addr = 0;
+
+  video_p_table[0].base_addr = 0;  // page is 4k aligned, 
+                                                                        // the address is multiple of 4k
+                                                                        // so lower 12 bits not required
+  video_p_table[0].present = 0;
+  // do not need to flush TLB?????
+}
 
 /*
  * get_pcb
