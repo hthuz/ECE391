@@ -59,7 +59,7 @@ char paging_init()
   {
     video_p_table[i].present = 0;      // initially unpresent
     video_p_table[i].r_w = 1;          // mark all pages read/write
-    video_p_table[i].u_su = 0;         // default supervisor only
+    video_p_table[i].u_su = 1;         // default supervisor only
     video_p_table[i].write_through = 0;// use write back, always 0
     video_p_table[i].cache_dis = 0;    // default no cache
     video_p_table[i].accessed = 0;     // unrelated
