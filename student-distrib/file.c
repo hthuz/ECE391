@@ -74,6 +74,7 @@ int32_t read_dentry_by_name (const uint8_t* fname, dentry_t* dentry){
     // search the name in the boot_block
     for (i=0;i<myboot->num_dir_entries;i++){
                 // compare the two names
+        //  printf("filename length is:%d\n",strlen((const int8_t*) myboot->dir_entries[i].filename));
         if (strncmp( (const int8_t*)myboot->dir_entries[i].filename, (const int8_t*)fname, mylength)==0 && 
             strlen((const int8_t*) myboot->dir_entries[i].filename) == mylength){
             // printf("dentry address is %x",dentry);
@@ -151,7 +152,7 @@ int32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t lengt
     // it's just used to illustrate the question
     sindex=offset/Four_KB;
     roffset = offset-sindex*Four_KB;
-
+    // printf("inode is:%d,offset is:%d,length is:%d\n",inode,offset,length);
     // if offset invalid
     if( totallength  <= offset ) {
         printf("offset invalid");
@@ -166,6 +167,7 @@ int32_t read_data (uint32_t inode, uint32_t offset, uint8_t* buf, uint32_t lengt
         for (j=roffset ; j< roffset+length ; j++){
             buf[count]=the_data->data[j];
             // putc(buf[count]);
+            // printf("%c",buf[count]);
             count++;
             if (totallength==offset+count) {
                 buf[count]='\0';    // printf stop earlier using \0
@@ -287,26 +289,28 @@ int file_write(){
  *          unit: how many bytes you read every time
  *          buf: the buffer pointer, the destination
  * OUTPUTS: none
- * RETURN VALUE: 0 if succeed, -1 if fail, 1 if come to the end
+ * RETURN VALUE: 0 if come to the end, -1 if fail, result if not come to the end
  * SIDE EFFECT: read and add the postion
 */
 int32_t file_read(int32_t fd, void* buf, int32_t nbytes){
+    printf( "file_read\n");
     pcb_t* curr_pcb = get_pcb(cur_pid);
-    printf("fd is %d, cur_pid is %d, pcb_t is: %x",fd, cur_pid, curr_pcb);
+    printf("fd is %d, cur_pid is %d, pcb_t is: %x\n",fd, cur_pid, curr_pcb);
     if(curr_pcb->farray[fd].flags == 0) return -1;
 
     int32_t result=0;
     uint32_t ino = curr_pcb->farray[fd].inode;
     uint32_t pos = curr_pcb->farray[fd].f_pos;
-    printf("inode is %d, pos is %d", ino, pos);
+    printf("inode is %d, pos is %d\n", ino, pos);
     //  // printf("pos is:%d\n",pos);
      if (buf==NULL) return -1;
      result=read_data (ino, pos, (uint8_t*)buf, nbytes);
-     if(result > 0) curr_pcb->farray[fd].f_pos += result;
+    //  printf("result is %d, f_pos is %d\n", result, pos);
+     if(result >= 0) curr_pcb->farray[fd].f_pos += result;
      if (result==-1) return -1;
     //  // printf("%s",buf);
-     if (result==0) return 1;
-     curr_pcb->farray[fd].f_pos += nbytes;
+    //  if (result==0) return 0;
+    //  curr_pcb->farray[fd].f_pos += nbytes;
      return result;
  }
 
