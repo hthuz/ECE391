@@ -111,7 +111,7 @@ int32_t terminal_write(int32_t fd, const void * buf, int32_t nbytes)
     cli();
     int i;
     char* charbuf = (char*) buf;
-    if( nbytes < 0 || nbytes > KB_BUF_SIZE)
+    if( nbytes < 0)
     {
         sti();
         return -1;

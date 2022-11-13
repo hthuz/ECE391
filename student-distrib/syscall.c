@@ -108,14 +108,12 @@ int32_t execute(const uint8_t* command)
   
   // 1. Parse args
   // get sep_command
-  // printf("len is:%d\n",command_length);
   i=0;
   while (command[i]==' ') i++;
   while (command[i]!=' ' && command[i]!='\0' && i<=command_length){
     sep_file[com_len++]=command[i++];
   }
   sep_file[com_len]='\0';
-  // printf("sep_file is:%s",sep_file);
 
   if (command[i]==' '){
     while (command[i]==' ') i++;
@@ -124,7 +122,6 @@ int32_t execute(const uint8_t* command)
     }
     sep_arg[arg_len]='\0';
   }
-  // printf("sep_arg is:%s\n",sep_arg);
 
 
   // check sep_command
@@ -168,7 +165,6 @@ int32_t execute(const uint8_t* command)
   if (arg_len>0){
     for (i=0;i<=arg_len;i++) pcb->args[i]=sep_arg[i];
   }
-  // printf("pcb->args is:%s\n",pcb->args);
   pcb->use_vid=0;
 
   // Initialize File array
