@@ -376,7 +376,7 @@ int32_t vidmap(uint8_t** screen_start)
   set_vidmap_paging();
   pcb_t* pcb=get_pcb(cur_pid);   
   pcb->use_vid=1;
-  screen_start[0] = (uint8_t*) (35*P_4M_SIZE);
+  (*screen_start) = (uint8_t*) (35*P_4M_SIZE);
   return 0;
 }
 
