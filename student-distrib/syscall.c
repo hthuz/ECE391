@@ -344,7 +344,15 @@ int32_t close(int32_t fd)
   return curr->farray[fd].optable_ptr->close(fd);
 }
 
-/* To be done */
+/* 
+ * getargs
+ *   DESCRIPTION: get arguments from command
+ *   INPUTS: buf -- buf to contain arguments
+ *           nbytes -- length of buf
+ *   OUTPUTS: none
+ *   SIDE EFFECTS: none
+ */
+
 int32_t getargs(uint8_t* buf, int32_t nbytes)
 {
   // check if in user space
