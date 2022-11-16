@@ -72,32 +72,28 @@ void keyboard_init()
 void keyboard_handler()
 {
 	unsigned char result;
-	int i;
 
 	unsigned char c = inb(KEY_PORT);
-	// printf("%x ",c);
 	// if get EXT_BYTE, read scancode
 	if (c == EXT_BYTE)
-	{
 		c = inb(KEY_PORT);
-	}
 
-	// if get CTRL
+	// Condition if get CTRL, ALT, SHIFT, CAPS_LOCK
 	if (c == CTRL)
 		ctrl_pressed = 1;
 	if (c == REL_CTRL)
 		ctrl_pressed = 0;
-	// if get ALT
+
 	if (c == ALT)
 		alt_pressed = 1;
 	if (c == REL_ALT)
 		alt_pressed = 0;
-	// if get SHIFT
+
 	if (c == LEFT_SHIFT || c == RIGHT_SHIFT)
 		shift_pressed = 1;
 	if (c == REL_LEFT_SHIFT || c == REL_RIGHT_SHIFT)
 		shift_pressed = 0;
-	// if get CAPS LOCK
+
 	if (c == CAPSLOCK && capslock_on == 0)
 	{
 		capslock_on = 1;
@@ -106,34 +102,82 @@ void keyboard_handler()
 		return;
 	}
 	if (c == CAPSLOCK && capslock_on == 1)
-	{
 		capslock_on = 0;
-	}
 
 	// CTRL + L will clean the screen
 	// 0x26: scancode for L
 	if (ctrl_pressed == 1 && c == 0x26)
 	{
-		clear();
-		update_cursor(0, 0);
-		memset(kb_buf, '\0', KB_BUF_SIZE);
-		kb_buf_length = 0;
+    handle_clear_screen();
 		send_eoi(KEY_IRQ);
 		return;
 	}
 
-	// print the character
+	// if it is outside the scancode table, do not translate
 	if (c >= 80)
 	{
-		send_eoi(KEY_IRQ); // if it is outside the scancode table, ignore it
+		send_eoi(KEY_IRQ); 
 		return;
 	}
 
+  result = translate_scancode(c);
+	// If get backspace
+	if (result == '\b')
+	{
+    handle_backspace();
+	  send_eoi(KEY_IRQ);
+		return;
+	}
+
+	// If get other characters
+	// If kb buffer doesn't overflow, put the result into buffer
+	if (kb_buf_length != KB_BUF_SIZE && result != 0)
+	{
+		kb_buf[kb_buf_length] = result;
+		kb_buf_length++;
+		putc(result);
+    send_eoi(KEY_IRQ);
+    return;
+	}
+	// if enter is pressed
+	if (result == '\n')
+		enter_pressed = 1;
+	send_eoi(KEY_IRQ);
+	return;
+}
+
+/* 
+ * handle_clear_screen
+ *   DESCRIPTION: clear the screen and clean kb_buf
+ *   INPUT: none
+ *   OUTPUT: none
+ *   RETURN VALUE: none
+ */
+void handle_clear_screen()
+{
+	clear();
+	update_cursor(0, 0);
+	memset(kb_buf, '\0', KB_BUF_SIZE);
+	kb_buf_length = 0;
+  return;
+}
+
+/*
+ * translate_scancode
+ *   DESCRIPTION: translate scancode to alphanumeric character
+ *   INPUT:  c -- scancode
+ *   OUTPUT: none
+ *   RETURN VALUE: corresponding alphanumeric character
+ */
+unsigned char translate_scancode(unsigned char c)
+{
+  unsigned char result;
+
+  // Combinations of shift and caps conditions
 	// shift not pressed, caps lock off
 	if (shift_pressed == 0 && capslock_on == 0)
-	{
 		result = scancode[c];
-	}
+
 	// shift not pressed, caps lock on
 	if (shift_pressed == 0 && capslock_on == 1)
 	{
@@ -141,11 +185,11 @@ void keyboard_handler()
 		if (is_alphabet(c))
 			result = result - CAPS_OFFSET;
 	}
+
 	// shift pressed, caps lock off
 	if (shift_pressed == 1 && capslock_on == 0)
-	{
 		result = capital_scancode[c];
-	}
+
 	// shift pressed, caps lock on
 	if (shift_pressed == 1 && capslock_on == 1)
 	{
@@ -154,52 +198,38 @@ void keyboard_handler()
 			result = result + CAPS_OFFSET;
 	}
 
-	// Case1: If get backspace
-	if (result == '\b')
-	{
-		// only delete if buffer length is not 0
-		if (kb_buf_length != 0)
-		{
-			// if it's tab on buffer,delete four times
-			if (kb_buf[kb_buf_length - 1] == '\t')
-			{
-				for (i = 0; i < 4; i++)
-					putc(result);
-			}
-			// else, only delete one time
-			else
-			{
-				putc(result);
-			}
-			kb_buf[kb_buf_length - 1] = '\0';
-			kb_buf_length--;
-		}
-		send_eoi(KEY_IRQ);
-		return;
-	}
-
-	// Case2: If get other characters
-	// If kb buffer doesn't overflow, put the result into buffer
-	if (kb_buf_length != KB_BUF_SIZE && result != 0)
-	{
-
-		// but shouldn't be added to buffer as this may affect the complence of command
-
-		kb_buf[kb_buf_length] = result;
-		kb_buf_length++;
-
-		putc(result);
-	}
-	// if enter is pressed
-	if (result == '\n')
-	{
-		enter_pressed = 1;
-	}
-	// if all these conditions are not met, still need to send EOI
-	send_eoi(KEY_IRQ);
-	return;
+  return result;
 }
 
+/*
+ * handle_backspace
+ *   DESCRIPTION: handler functino when backspace is pressed
+ *   INPUT: none
+ *   OUTPUT: none
+ *   RETURN VALUE: none
+ */
+void handle_backspace()
+{
+  int i;
+  unsigned char backspace = '\b';
+	// only delete if buffer length is not 0
+	if (kb_buf_length != 0)
+	{
+		// if it's tab on buffer,delete four times
+		if (kb_buf[kb_buf_length - 1] == '\t')
+		{
+			for (i = 0; i < 4; i++)
+				putc(backspace);
+		}
+		// else, only delete one time
+		else
+			putc(backspace);
+
+		kb_buf[kb_buf_length - 1] = '\0';
+		kb_buf_length--;
+	}
+  return;
+}
 /* is_alphabet
  *   DESCRIPTION: given a scancode from keyboard, determine if it's alphabet,
  *   			  used to help differentiate different cases of shift and caps lock
@@ -221,6 +251,8 @@ int is_alphabet(unsigned char scancode)
 	else
 		return 0;
 }
+
+
 
 /* scroll_one_line
  *   DESCRIPTION: when the screen is full, screen by one line

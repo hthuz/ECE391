@@ -22,6 +22,13 @@ int is_alphabet(unsigned char scancode);
 // used to scroll the screen by one line
 int scroll_one_line();
 
+// handle clean screen
+void handle_clear_screen();
+// translate scancode to letters and numbers 
+unsigned char translate_scancode(unsigned char c);
+// handle backspace
+void handle_backspace();
+
 // functions for cursor control
 // Refer to https://wiki.osdev.org/Text_Mode_Cursor
 void cursor_init();
