@@ -5,10 +5,9 @@
 #include "terminal.h"
 #include "lib.h"
 #include "keyboard.h"
+#include "syscall.h"
 
-// Note that terminal_read will clear kb buffer, thus change kb_buf_length
-// To test terminal read return correct number, keep a copy of kb_buf_length
-int original_kb_buf_length;
+
 /* terminal_open
  *   DESCRIPTION: get directory entry to filename
                   allocate unused file descriptor
@@ -51,9 +50,9 @@ int32_t terminal_close(int32_t fd)
 int32_t terminal_read(int32_t fd, void *buf, int32_t nbytes)
 {
     if (buf == NULL)
-        return -1;
+        return SYSCALL_FAIL;
     if (nbytes < kb_buf_length + 1)
-        return -1;
+        return SYSCALL_FAIL;
     // do nothing until enter is pressed
     while (enter_pressed == 0);
 
@@ -104,18 +103,16 @@ int32_t terminal_read(int32_t fd, void *buf, int32_t nbytes)
 int32_t terminal_write(int32_t fd, const void *buf, int32_t nbytes)
 {
     if (nbytes < 0)
-      return -1;
+      return SYSCALL_FAIL;
     if (buf == NULL)
-      return -1;
+      return SYSCALL_FAIL;
 
     cli();
     int i;
     char *charbuf = (char *)buf;
 
     for (i = 0; i < nbytes; i++)
-    {
         putc(charbuf[i]);
-    }
     sti();
     return nbytes;
 }

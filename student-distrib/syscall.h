@@ -7,6 +7,7 @@
 #include "file.h"
 #include "paging.h"
 
+#define SYSCALL_FAIL -1;
 // A header occupies first 40 bytes that gives information about load and starting
 #define FHEADER_LEN 40
 #define EXE_MAGIC1 0x7f

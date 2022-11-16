@@ -72,7 +72,6 @@ int32_t read_dentry_by_name(const uint8_t *fname, dentry_t *dentry)
         return -1;
     if (mylength > NameLen)
     {
-        printf("this file name is invalid  \n");
         return -1;
     }
     // search the name in the boot_block
