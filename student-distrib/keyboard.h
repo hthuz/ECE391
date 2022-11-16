@@ -20,7 +20,7 @@ void keyboard_handler(void);
 int is_alphabet(unsigned char scancode);
 
 // used to scroll the screen by one line
-int scroll_one_line();
+void scroll_one_line();
 
 // handle clean screen
 void handle_clear_screen();

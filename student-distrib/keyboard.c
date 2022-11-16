@@ -136,12 +136,18 @@ void keyboard_handler()
 		kb_buf[kb_buf_length] = result;
 		kb_buf_length++;
 		putc(result);
+    if (result == '\n')
+        enter_pressed = 1;
     send_eoi(KEY_IRQ);
     return;
 	}
-	// if enter is pressed
-	if (result == '\n')
-		enter_pressed = 1;
+
+  // If kb_buf is full but still get enter
+  if (kb_buf_length == KB_BUF_SIZE && result == '\n')
+  {
+    putc(result);
+    enter_pressed = 1;
+  }
 	send_eoi(KEY_IRQ);
 	return;
 }
@@ -265,14 +271,12 @@ int is_alphabet(unsigned char scancode)
  *
  */
 
-int scroll_one_line()
+void scroll_one_line()
 {
 	char *dest_mem;
 
 	// move memory starting frow second row to first row
 	dest_mem = memmove(video_mem, (char *)(VIDEO + (NUM_COLS << 1)), VIDEO_SIZE - (NUM_COLS << 1));
-	if (dest_mem != video_mem)
-		return -1;
 
 	// set video memory of last row to empty
 	// TODO: probabilty keyboard buffer need to be cleaned as well?
@@ -287,7 +291,7 @@ int scroll_one_line()
 	screen_y--; // reset screen_y to NUM_ROWS - 1 (24)
 	// update_cursor(screen_x,screen_y);
 
-	return 0;
+	return;
 }
 
 /* cursor_init

@@ -41,8 +41,8 @@ int32_t terminal_close(int32_t fd)
  *   DESCRIPTION: copy from keyboard buffer to buf
                   only returns when enter key is pressed
  *   INPUTS:  fd -- file descriptor
-              buf -- buffer
-              nbytes -- number of bytes to read
+              buf -- buffer to load keyboard buffer
+              nbytes -- maximum length of buf - 1
  *   OUTPUTS: none
  *   RETURN VALUE: -1 if failure
  *                 number of bytes successfully copied if success
@@ -52,48 +52,45 @@ int32_t terminal_read(int32_t fd, void *buf, int32_t nbytes)
 {
     if (buf == NULL)
         return -1;
-
+    if (nbytes < kb_buf_length + 1)
+        return -1;
     // do nothing until enter is pressed
-    while (enter_pressed == 0)
-        ;
+    while (enter_pressed == 0);
+
     cli();
-
-    // if enter is pressed
-    // copy from kb_buf until is pressed
-    int i = 0; // index for copy, the final value should be kb_buf_length - 1
-    int j = 0; // index for empty
+    int i;
+    int j;
     char *charbuf = buf;
-    // empty buf first
-    for (j = 0; j < KB_BUF_SIZE; j++)
-    {
-        charbuf[j] = '\0';
-    }
 
-    while (i < KB_BUF_SIZE && kb_buf[i] != '\n')
+    // empty buf first
+    for (i = 0; i <= nbytes; i++)
+        charbuf[i] = '\0';
+
+    // Copy kb_buf to dest buf
+    // After loop, i becomes kb_buf_length
+    for(i = 0; i < kb_buf_length; i++)
     {
         charbuf[i] = kb_buf[i];
-        kb_buf[i] = '\0';
+    }
+
+    // If kb_buf is full without /n, add one to termianl buf
+    // i.e. there should always be \n at the end of terminal buf
+    if(kb_buf_length == KB_BUF_SIZE && kb_buf[KB_BUF_SIZE - 1] != '\n')
+    {
+        charbuf[i] = '\n';
         i++;
     }
 
-    // clean keyboard buffer
-    // IF kb_buffer is not full, last character is /n
-    // it should be cleaned
-    if (i != KB_BUF_SIZE)
-        kb_buf[i] = '\0';
-
-    // used to test terminal read return correct value
-    original_kb_buf_length = kb_buf_length;
-    // if kb_buffer is full, treat the last /n as additional character
-    if (i == KB_BUF_SIZE)
-        original_kb_buf_length += 1;
+    // Clean kb_buf
+    for(j = 0; j < kb_buf_length; j++)
+        kb_buf[j] = '\0';
     kb_buf_length = 0;
     enter_pressed = 0;
     sti();
-    return i;
+    return i ;
 }
 
-/* terminal_write
+ /* terminal_write
  * terminal_write
  *   DESCRIPTION: print things in buf to screen(write data to terminal)
  *   INPUTS:  fd -- file descriptor
@@ -106,14 +103,14 @@ int32_t terminal_read(int32_t fd, void *buf, int32_t nbytes)
  */
 int32_t terminal_write(int32_t fd, const void *buf, int32_t nbytes)
 {
+    if (nbytes < 0)
+      return -1;
+    if (buf == NULL)
+      return -1;
+
     cli();
     int i;
     char *charbuf = (char *)buf;
-    if (nbytes < 0)
-    {
-        sti();
-        return -1;
-    }
 
     for (i = 0; i < nbytes; i++)
     {
@@ -122,3 +119,8 @@ int32_t terminal_write(int32_t fd, const void *buf, int32_t nbytes)
     sti();
     return nbytes;
 }
+
+
+
+
+
