@@ -8,8 +8,7 @@
 #include "rtc.h"
 #include "x86_desc.h"
 
-#define succsess 0;
-#define fail -1;
+#define SYSCALL_FAIL -1;
 
 // Initially, there is no process, denote as -1
 int32_t cur_pid = -1;
@@ -101,38 +100,35 @@ int32_t execute(const uint8_t *command)
   int32_t entry_pt;         // Entry point into the program (EIP)
   int32_t user_esp;         // ESP for user program
   int32_t i;                // Index for loop
-  uint8_t sep_file[ARG_LEN];
-  uint8_t sep_arg[ARG_LEN];
-  uint32_t com_len = 0; // if com_len=6, sep[0-5], and sep[6]='\0'
-  uint32_t arg_len = 0;
+  uint8_t usr_cmd[ARG_LEN];
+  uint8_t usr_args[ARG_LEN];
+  uint32_t cmd_len = 0; // if com_len=6, sep[0-5], and sep[6]='\0'
+  uint32_t args_len = 0;
   uint32_t command_length = strlen((int8_t *)command);
 
   // 1. Parse args
+
+  if (command == NULL)
+    return -1;
   // get sep_command
   i = 0;
   while (command[i] == ' ')
     i++;
   while (command[i] != ' ' && command[i] != '\0' && i <= command_length)
-  {
-    sep_file[com_len++] = command[i++];
-  }
-  sep_file[com_len] = '\0';
+    usr_cmd[cmd_len++] = command[i++];
+  usr_cmd[cmd_len] = '\0';
 
   if (command[i] == ' ')
   {
     while (command[i] == ' ')
       i++;
     while (command[i] != ' ' && command[i] != '\0' && i <= command_length)
-    {
-      sep_arg[arg_len++] = command[i++];
-    }
-    sep_arg[arg_len] = '\0';
+      usr_args[args_len++] = command[i++];
+    usr_args[args_len] = '\0';
   }
 
-  // check sep_command
-  if (sep_file == NULL)
-    return -1;
-  if (read_dentry_by_name(sep_file, &dentry) == -1)
+  // check user comnand
+  if (read_dentry_by_name(usr_cmd, &dentry) == -1)
     return -1;
   inode = (nodes_block *)(mynode + dentry.inode);
 
@@ -167,10 +163,13 @@ int32_t execute(const uint8_t *command)
   pcb->pid = cur_pid;
   pcb->parent_pid = parent_pid;
 
-  if (arg_len > 0)
+
+  for(i = 0; i < ARG_LEN; i++)
+    pcb->args[i] = '\0';
+  if (args_len > 0)
   {
-    for (i = 0; i <= arg_len; i++)
-      pcb->args[i] = sep_arg[i];
+    for (i = 0; i <= args_len; i++)
+      pcb->args[i] = usr_args[i];
   }
   pcb->use_vid = 0;
 
@@ -227,22 +226,22 @@ int32_t execute(const uint8_t *command)
  *          void* buf - ptr to the buffer
  *          int32_t nbytes - the length of the bytes to read
  *  OUTPUTS: read function
- *  RETURN VALUE: return fd for SUCCESS, -1 for fail
+ *  RETURN VALUE: return fd for SUCCESS, -1 for FAIL
  */
 int32_t read(int32_t fd, void *buf, int32_t nbytes)
 {
   pcb_t *curr = get_pcb(cur_pid);
-  // if fd=0 or fd is out of the range return fail
+  // if fd=0 or fd is out of the range return SYSCALL_FAIL
   if (fd == 1 || fd < 0 || fd > FARRAY_SIZE)
-    return fail;
+    return SYSCALL_FAIL;
   // check if ptr is in user space
   if ((int)buf < US_START || (int)buf + nbytes > US_END)
-    return fail;
+    return SYSCALL_FAIL;
   // check flag and read function
   if (!curr->farray[fd].flags)
-    return fail;
+    return SYSCALL_FAIL;
   if (curr->farray[fd].optable_ptr->read == NULL)
-    return fail;
+    return SYSCALL_FAIL;
 
   return curr->farray[fd].optable_ptr->read(fd, buf, nbytes); //(fd,file_array[fd].file_position,buf,nbytes)
 }
@@ -254,21 +253,21 @@ int32_t read(int32_t fd, void *buf, int32_t nbytes)
  *          void* buf - ptr to the buffer
  *          int32_t nbytes - the length of the bytes to write
  *  OUTPUTS: write function
- *  RETURN VALUE: return fd for SUCCESS, -1 for fail
+ *  RETURN VALUE: return fd for SUCCESS, -1 for FAIL
  */
 int32_t write(int32_t fd, const void *buf, int32_t nbytes)
 {
   pcb_t *curr = get_pcb(cur_pid);
   // some check to avoid invalid situations
   if (fd <= 0 || fd >= FARRAY_SIZE || buf == NULL)
-    return fail;
+    return SYSCALL_FAIL;
   if (!curr->farray[fd].flags)
-    return fail;
+    return SYSCALL_FAIL;
   if (curr->farray[fd].optable_ptr->write == NULL)
-    return fail;
+    return SYSCALL_FAIL;
   // check if ptr is in user space
   if ((int)buf < US_START || (int)(buf + nbytes) > US_END)
-    return fail;
+    return SYSCALL_FAIL;
   return curr->farray[fd].optable_ptr->write(fd, buf, nbytes);
 }
 
@@ -277,7 +276,7 @@ int32_t write(int32_t fd, const void *buf, int32_t nbytes)
  *  DESCRIPTION: fill the one free entry of file array with the file
  *  INPUTS: the file name which want to open
  *  OUTPUTS: NONE
- *  RETURN VALUE: return fd for success, -1 for fail
+ *  RETURN VALUE: return fd for success, -1 for FAIL
  */
 int32_t open(const uint8_t *filename)
 {
@@ -288,12 +287,12 @@ int32_t open(const uint8_t *filename)
   int fd = -1;
   // check if filename is valid to open
   if (filename == NULL || (int)filename < US_START || (int)filename > US_END)
-    return fail;
+    return SYSCALL_FAIL;
   // check if the filename is exist by read_dentry_by_name function
   if (read_dentry_by_name(filename, &curr_dentry) == -1)
   {
     printf("we cannot find such file");
-    return fail;
+    return SYSCALL_FAIL;
   }
   // find the table which is not using
   for (i = 0; i < FARRAY_SIZE; i++)
@@ -308,7 +307,7 @@ int32_t open(const uint8_t *filename)
   if (fd == -1)
   {
     printf("no descriptor is free now");
-    return fail;
+    return SYSCALL_FAIL;
   }
   // according to the found fd, set position and flag
   curr->farray[fd].f_pos = 0;
@@ -328,13 +327,6 @@ int32_t open(const uint8_t *filename)
     curr->farray[fd].inode = curr_dentry.inode;
     curr->farray[fd].optable_ptr = &dir_optable;
     break;
-    // case CASE_TERMINAL:
-    //   curr->farray[fd].inode = curr_dentry.inode;
-    //   curr->farray[fd].optable_ptr->open = &terminal_open;
-    //   curr->farray[fd].optable_ptr->close = &terminal_close;
-    //   curr->farray[fd].optable_ptr->read = &terminal_read;
-    //   curr->farray[fd].optable_ptr->write = &terminal_write;
-    //   break;
   }
   curr->farray[fd].optable_ptr->open(filename);
   return fd;
@@ -345,14 +337,14 @@ int32_t open(const uint8_t *filename)
  *  DESCRIPTION: the system call function to close
  *  INPUTS: the file name which it want to closse
  *  OUTPUTS: file array filled with entry
- *  RETURN VALUE: should return fd for SUCCESS, -1 for fail
+ *  RETURN VALUE: should return fd for SUCCESS, -1 for SYSCALL_FAIL
  */
 int32_t close(int32_t fd)
 {
   pcb_t *curr = get_pcb(cur_pid);
-  // first check; return fail for invailid index, try to closed default or orig closed
+  // first check; return SYSCALL_FAIL for invailid index, try to closed default or orig closed
   if (fd <= 1 || fd >= FARRAY_SIZE || curr->farray[fd].flags == 0)
-    return fail;
+    return SYSCALL_FAIL;
 
   // closed
   curr->farray[fd].flags = 0; // 0 means inactive
@@ -372,11 +364,12 @@ int32_t getargs(uint8_t *buf, int32_t nbytes)
 {
   // check if in user space
   if ((int)buf < US_START || (int)buf + nbytes >= US_END || buf == NULL)
-    return fail;
-  pcb_t *curr = get_pcb(cur_pid);
+    return SYSCALL_FAIL;
+
   // check if there are no arguments
-  if (curr->args[0] == NULL)
-    return fail;
+  pcb_t *curr = get_pcb(cur_pid);
+  if (curr->args[0] == '\0')
+    return SYSCALL_FAIL;
   strncpy((int8_t *)buf, (int8_t *)curr->args, nbytes);
   return 0;
 }
@@ -386,14 +379,14 @@ int32_t getargs(uint8_t *buf, int32_t nbytes)
  *  DESCRIPTION: check the false cases, set the vidmap_paging and set the screen_start
  *  INPUTS: the pointer screen_start, it stores the virtual address of start of video memory
  *  OUTPUTS: 0
- *  RETURN VALUE: should return 0 for SUCCESS, -1 for fail
+ *  RETURN VALUE: should return 0 for SUCCESS, -1 for SYSCALL_FAIL
  */
 int32_t vidmap(uint8_t **screen_start)
 {
   if (screen_start == NULL)
-    return fail;
+    return SYSCALL_FAIL;
   if ((uint32_t)screen_start < US_START || (uint32_t)screen_start > US_END)
-    return fail;
+    return SYSCALL_FAIL;
   // 128MB is the start of the program image
   // set 140MB as the virtual space address of memory
   set_vidmap_paging();
