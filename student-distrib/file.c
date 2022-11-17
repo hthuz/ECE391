@@ -314,7 +314,7 @@ int32_t file_read(int32_t fd, void *buf, int32_t nbytes)
     int32_t result = 0;
     uint32_t ino = curr_pcb->farray[fd].inode;
     uint32_t pos = curr_pcb->farray[fd].f_pos;
-    nodes_block *inode = (nodes_block *)(mynode + ino);
+    // nodes_block *inode = (nodes_block *)(mynode + ino);
 
     if (buf == NULL)
         return -1;
