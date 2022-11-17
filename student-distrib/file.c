@@ -134,7 +134,7 @@ int32_t read_dentry_by_index(uint32_t index, dentry_t *dentry)
  *          length: the read bytes length
  * OUTPUTS: none
  * RETURN VALUE: count: the number of bytes I read,
- *               0: come to the file end
+ *               0: the number of bytes I read / don't read
  *               -1: invalid offset
  * SIDE EFFECT: read data, write into buffer
  */
@@ -322,12 +322,14 @@ int32_t file_read(int32_t fd, void *buf, int32_t nbytes)
 
     if (result == -1)
         return -1;
+    // if (result == 0)
+    //     return 0;
     curr_pcb->farray[fd].f_pos += result;
 
-    if (result < nbytes)
-        return result;
-    if (curr_pcb->farray[fd].f_pos == inode->length)
-        return 0;
+    // if (result < nbytes)
+    //     return result;
+    // if (curr_pcb->farray[fd].f_pos == inode->length)
+    //     return 0;
 
     return result;
 }
