@@ -23,7 +23,6 @@ static inline void assertion_failure(){
 	asm volatile("int $15");
 }
 
-extern int original_kb_buf_length;
 /* Checkpoint 1 tests */
 
 /* IDT Test - Example
@@ -245,41 +244,6 @@ int terminal_write_test()
 		assertion_failure();
 	}
 	return result;
-}
-
-/* Termial Test
- *
- *   Asserts that terminal read works. Only test once
- *   To fully test, use terminal_test()
- *   INPUTS: none
- *   OUTPUTS: PASS/FAIL
- *   SIDE EFFECTS: None
- *   Coverage: terminal read
- *   Files: terminal.h/c
- */
-int terminal_read_test()
-{
-	TEST_HEADER;
-	int result = PASS;
-
-	int32_t fd = 3;
-	// add additional buf to make sure space is enough
-	char buf[KB_BUF_SIZE + 1] = {'\0'};
-
-	printf("Please type something to test terminal read:");
-
-	int ret_val = terminal_read(fd,buf,kb_buf_length - 1);
-	if( (original_kb_buf_length - 1) != ret_val)
-	{
-		printf("kb_buf_length: %d",original_kb_buf_length);
-		printf("terminal_return_value: %d",ret_val);
-		result = FAIL;
-		printf("terminal read number doesn't match!\n");
-		assertion_failure();
-	}
-	printf("terminal_read return value matches!\n");
-	return result;
-
 }
 /* Termial Test
  *
