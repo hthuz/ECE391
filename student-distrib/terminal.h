@@ -10,10 +10,12 @@
 
 // Multiple Terminal Macros
 #define MAX_TERM_NUM 3
-// Termial 1,2,3 are allocated at 800kb, 900kb, 1000 kb respectively
+// Terminal 1: 800KB - 0xC8000
+// Terminal 2: 900KB - 0xE1000
+// Termiaal 3: 1000KB  - 0xFA000 
 #define TERM_VID_ADDR(tid) ((tid) * 25 * P_4K_SIZE + 175 * P_4K_SIZE)
-int32_t cur_tid = 1;
 
+extern int32_t cur_tid;
 // terminal driver components
 int32_t terminal_open(const uint8_t* filename);
 int32_t terminal_close(int32_t fd);

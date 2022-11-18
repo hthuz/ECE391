@@ -12,6 +12,7 @@
 
 // Initially, there is no process, denote as -1
 int32_t cur_pid = -1;
+extern int32_t cur_tid;
 
 extern pde_t p_dir[PDE_NUM] __attribute__((aligned(P_4K_SIZE)));
 extern nodes_block *mynode;

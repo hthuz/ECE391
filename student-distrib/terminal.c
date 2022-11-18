@@ -9,6 +9,10 @@
 #include "paging.h"
 
 
+int32_t cur_tid = 1;
+int term_screen_xs[MAX_TERM_NUM] = {0};
+int term_screen_ys[MAX_TERM_NUM] = {0};
+
 /* terminal_open
  *   DESCRIPTION: get directory entry to filename
                   allocate unused file descriptor
@@ -123,6 +127,7 @@ void terminal_switch(int32_t new_tid)
 {
   int new_term_vid_addr = TERM_VID_ADDR(new_tid);
   int cur_term_vid_addr = TERM_VID_ADDR(cur_tid);
+
   
   // Save current used terminal video memory
   memcpy((void*)cur_term_vid_addr,(const void*) VID_MEM_START, P_4K_SIZE);
@@ -130,8 +135,18 @@ void terminal_switch(int32_t new_tid)
   // Set new terminal video memory
   memcpy((void*) VID_MEM_START, (const void*)new_term_vid_addr, P_4K_SIZE);
 
+  // Save screen positoin
+  term_screen_xs[cur_tid] = screen_x;
+  term_screen_ys[cur_tid] = screen_y;
+
+  // Set new screen position
+  screen_x = term_screen_xs[new_tid];
+  screen_y = term_screen_ys[new_tid];
+
   cur_tid = new_tid;
-  printf("TERMINAL #%d\n",cur_tid);
+  // printf("TERMINAL #%d\n",cur_tid);
+  printf("%x ", new_term_vid_addr);
+  printf("%x\n",cur_term_vid_addr);
   execute((uint8_t *)"shell");
 }
 
@@ -147,6 +162,7 @@ void terminal_paging_init()
     vid_addr = TERM_VID_ADDR(tid);
     p_table[PTE_INDEX(vid_addr)].base_addr = vid_addr >> 12;
     p_table[PTE_INDEX(vid_addr)].present = 1;
+    memset((void*)vid_addr, '/0',P_4K_SIZE);
   }
 }
 

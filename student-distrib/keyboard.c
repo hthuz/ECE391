@@ -120,20 +120,20 @@ void keyboard_handler()
   // ALT + Function-key will switch terminal
   if (alt_pressed == 1 && c == FUNC1)
   {
-    terminal_switch(1);
     send_eoi(KEY_IRQ);
+    terminal_switch(1);
     return;
   }
   if (alt_pressed == 1 && c == FUNC2)
   {
-    terminal_switch(2);
     send_eoi(KEY_IRQ);
+    terminal_switch(2);
     return;
   }
   if (alt_pressed == 1 && c == FUNC3)
   {
-    terminal_switch(3);
     send_eoi(KEY_IRQ);
+    terminal_switch(3);
     return;
   }
 
