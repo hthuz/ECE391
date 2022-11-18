@@ -2,6 +2,7 @@
 #define _KEYBOARD_H
 
 #include "lib.h"
+#include "terminal.h"
 
 #define KEY_PORT 0x60
 #define KEY_IRQ 0x01

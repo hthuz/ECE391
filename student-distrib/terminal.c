@@ -6,6 +6,7 @@
 #include "lib.h"
 #include "keyboard.h"
 #include "syscall.h"
+#include "paging.h"
 
 
 /* terminal_open
@@ -117,6 +118,37 @@ int32_t terminal_write(int32_t fd, const void *buf, int32_t nbytes)
     return nbytes;
 }
 
+
+void terminal_switch(int32_t new_tid)
+{
+  int new_term_vid_addr = TERM_VID_ADDR(new_tid);
+  int cur_term_vid_addr = TERM_VID_ADDR(cur_tid);
+  
+  // Save current used terminal video memory
+  memcpy((void*)cur_term_vid_addr,(const void*) VID_MEM_START, P_4K_SIZE);
+  
+  // Set new terminal video memory
+  memcpy((void*) VID_MEM_START, (const void*)new_term_vid_addr, P_4K_SIZE);
+
+  cur_tid = new_tid;
+  printf("TERMINAL #%d\n",cur_tid);
+  execute((uint8_t *)"shell");
+}
+
+
+void terminal_paging_init()
+{
+  int vid_addr;
+  int tid;
+
+  // For each terminal
+  for(tid = 1; tid <= MAX_TERM_NUM; tid++ )
+  {
+    vid_addr = TERM_VID_ADDR(tid);
+    p_table[PTE_INDEX(vid_addr)].base_addr = vid_addr >> 12;
+    p_table[PTE_INDEX(vid_addr)].present = 1;
+  }
+}
 
 
 
