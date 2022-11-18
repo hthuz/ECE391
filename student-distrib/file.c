@@ -409,7 +409,7 @@ int32_t directory_read(int32_t fd, void *buf, int32_t nbytes)
     dir_file_read++;
     if (dir_file_read == myboot->num_dir_entries)
         return 0; // come to the end
-    return nbytes;
+    return strlen((int8_t*) ret_buf);
 }
 
 // useless functions
