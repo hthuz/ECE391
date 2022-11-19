@@ -175,6 +175,7 @@ void entry(unsigned long magic, unsigned long addr) {
 #endif
     /* Execute the first program ("shell") ... */
 	optable_init();	
+	printf("TERMINAL #%d\n",cur_tid);
 	execute((uint8_t*)"shell");
 
     /* Spin (nicely, so we don't chew up cycles) */

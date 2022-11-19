@@ -46,6 +46,7 @@ int32_t terminal_write(int32_t fd, const void * buf, int32_t nbytes);
 
 // multi-terminal 
 void terminal_init();
+termin_t* get_terminal(int32_t tid);
 void terminal_switch(int32_t new_tid);
 
 #endif /*TERMINAL_H*/
