@@ -85,9 +85,6 @@ char paging_init()
                                                                         // so lower 12 bits not required
   p_table[PTE_INDEX(VID_MEM_START)].present = 1;
 
-  // set up paging for terminal video memory
-  terminal_paging_init();
-
   // paging for kernel memory
   // using 4MB paging
   p_dir[PDE_INDEX(P_4M_SIZE)].present = 1;

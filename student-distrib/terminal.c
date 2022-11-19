@@ -4,14 +4,12 @@
 
 #include "terminal.h"
 #include "lib.h"
-#include "keyboard.h"
 #include "syscall.h"
 #include "paging.h"
 
 
-int32_t cur_tid = 1;
-int term_screen_xs[MAX_TERM_NUM] = {0};
-int term_screen_ys[MAX_TERM_NUM] = {0};
+int32_t cur_tid = 0;
+termin_t terminals[MAX_TERM_NUM];
 
 /* terminal_open
  *   DESCRIPTION: get directory entry to filename
@@ -123,46 +121,59 @@ int32_t terminal_write(int32_t fd, const void *buf, int32_t nbytes)
 }
 
 
+
+void terminal_init()
+{
+  int tid;
+  int vid_addr;
+  for(tid = 0; tid < MAX_TERM_NUM; tid++)
+  {
+    terminals[tid].invoked = 0;
+    // Video Memory
+    vid_addr = TERM_VID_ADDR(tid);
+    terminals[tid].video_mem = (char*)(vid_addr);
+
+    // Paging 
+    p_table[PTE_INDEX(vid_addr)].base_addr = vid_addr >> 12;
+    p_table[PTE_INDEX(vid_addr)].present = 1;
+
+    // Screen Position
+    terminals[tid].screen_x = 0;
+    terminals[tid].screen_y = 0;
+  }    
+
+  // Terminal 0 is invoked 
+  terminals[0].invoked = 1;
+
+}
+
 void terminal_switch(int32_t new_tid)
 {
-  int new_term_vid_addr = TERM_VID_ADDR(new_tid);
-  int cur_term_vid_addr = TERM_VID_ADDR(cur_tid);
-
-  
+  // If Switch to the same terminal, do nothing
+  if(cur_tid == new_tid)
+    return;
+  termin_t cur_term = terminals[cur_tid];
+  termin_t new_term = terminals[new_tid];
   // Save current used terminal video memory
-  memcpy((void*)cur_term_vid_addr,(const void*) VID_MEM_START, P_4K_SIZE);
+  memcpy((void*)cur_term.video_mem,(const void*) VID_MEM_START, P_4K_SIZE);
   
   // Set new terminal video memory
-  memcpy((void*) VID_MEM_START, (const void*)new_term_vid_addr, P_4K_SIZE);
+  memcpy((void*) VID_MEM_START, (const void*)new_term.video_mem, P_4K_SIZE);
 
   // Save screen positoin
-  term_screen_xs[cur_tid] = screen_x;
-  term_screen_ys[cur_tid] = screen_y;
+  cur_term.screen_x = screen_x;
+  cur_term.screen_y = screen_y;
 
   // Set new screen position
-  screen_x = term_screen_xs[new_tid];
-  screen_y = term_screen_ys[new_tid];
+  screen_x = new_term.screen_x;
+  screen_y = new_term.screen_y;
 
   cur_tid = new_tid;
   // printf("TERMINAL #%d\n",cur_tid);
-  printf("%x ", new_term_vid_addr);
-  printf("%x\n",cur_term_vid_addr);
-  execute((uint8_t *)"shell");
-}
-
-
-void terminal_paging_init()
-{
-  int vid_addr;
-  int tid;
-
-  // For each terminal
-  for(tid = 1; tid <= MAX_TERM_NUM; tid++ )
+  if(new_term.invoked == 0)
   {
-    vid_addr = TERM_VID_ADDR(tid);
-    p_table[PTE_INDEX(vid_addr)].base_addr = vid_addr >> 12;
-    p_table[PTE_INDEX(vid_addr)].present = 1;
-    memset((void*)vid_addr, '/0',P_4K_SIZE);
+    new_term.invoked = 1;
+    execute((uint8_t *)"shell");
   }
 }
 

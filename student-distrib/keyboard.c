@@ -121,19 +121,19 @@ void keyboard_handler()
   if (alt_pressed == 1 && c == FUNC1)
   {
     send_eoi(KEY_IRQ);
-    terminal_switch(1);
+    terminal_switch(0);
     return;
   }
   if (alt_pressed == 1 && c == FUNC2)
   {
     send_eoi(KEY_IRQ);
-    terminal_switch(2);
+    terminal_switch(1);
     return;
   }
   if (alt_pressed == 1 && c == FUNC3)
   {
     send_eoi(KEY_IRQ);
-    terminal_switch(3);
+    terminal_switch(2);
     return;
   }
 
