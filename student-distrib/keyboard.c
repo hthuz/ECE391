@@ -2,6 +2,7 @@
 #include "keyboard.h"
 #include "lib.h"
 #include "i8259.h"
+#include "terminal.h"
 
 /* Array for the characters without shift or CAPS */
 // Refer to https://wiki.osdev.org/Keyboard ScanCode set 1
@@ -42,6 +43,7 @@ unsigned char capital_scancode[0x3E] =
 #define FUNC2 0x3C
 #define FUNC3 0x3D
 
+// Initialized in terminal_init function
 int ctrl_pressed = 0;
 int shift_pressed = 0;
 int alt_pressed = 0;
@@ -49,8 +51,6 @@ int capslock_on = 0; // Assume capslock is off at the beginning
 int enter_pressed = 0;
 
 // The size of keyboard buffer is at most 128 bytes
-unsigned char kb_buf[KB_BUF_SIZE] = {'\0'};
-int kb_buf_length = 0; // Number of characters in kb buffer ( 0 - 128)
 /*
  * initialize_keyboard
  * DESCRIPTION: enable the keyboard interrupt IRQ1
@@ -77,6 +77,7 @@ void keyboard_init()
 void keyboard_handler()
 {
 	unsigned char result;
+  termin_t* cur_term = get_terminal(cur_tid);
 
 	unsigned char c = inb(KEY_PORT);
 	// if get EXT_BYTE, read scancode
@@ -157,10 +158,10 @@ void keyboard_handler()
 
 	// If get other characters
 	// If kb buffer doesn't overflow, put the result into buffer
-	if (kb_buf_length != KB_BUF_SIZE && result != 0)
+	if (cur_term->kb_buf_length != KB_BUF_SIZE && result != 0)
 	{
-		kb_buf[kb_buf_length] = result;
-		kb_buf_length++;
+		cur_term->kb_buf[cur_term->kb_buf_length] = result;
+	  cur_term->kb_buf_length++;
 		putc(result);
     if (result == '\n')
         enter_pressed = 1;
@@ -169,7 +170,7 @@ void keyboard_handler()
 	}
 
   // If kb_buf is full but still get enter
-  if (kb_buf_length == KB_BUF_SIZE && result == '\n')
+  if (cur_term->kb_buf_length == KB_BUF_SIZE && result == '\n')
   {
     putc(result);
     enter_pressed = 1;
@@ -187,10 +188,11 @@ void keyboard_handler()
  */
 void handle_clear_screen()
 {
+  termin_t* cur_term = get_terminal(cur_tid);
 	clear();
 	update_cursor(0, 0);
-	memset(kb_buf, '\0', KB_BUF_SIZE);
-	kb_buf_length = 0;
+	memset(cur_term->kb_buf, '\0', KB_BUF_SIZE);
+	cur_term->kb_buf_length = 0;
   return;
 }
 
@@ -243,12 +245,13 @@ unsigned char translate_scancode(unsigned char c)
 void handle_backspace()
 {
   int i;
+  termin_t* cur_term = get_terminal(cur_tid);
   unsigned char backspace = '\b';
 	// only delete if buffer length is not 0
-	if (kb_buf_length != 0)
+	if (cur_term->kb_buf_length != 0)
 	{
 		// if it's tab on buffer,delete four times
-		if (kb_buf[kb_buf_length - 1] == '\t')
+		if (cur_term->kb_buf[cur_term->kb_buf_length - 1] == '\t')
 		{
 			for (i = 0; i < 4; i++)
 				putc(backspace);
@@ -257,8 +260,8 @@ void handle_backspace()
 		else
 			putc(backspace);
 
-		kb_buf[kb_buf_length - 1] = '\0';
-		kb_buf_length--;
+		cur_term->kb_buf[cur_term->kb_buf_length - 1] = '\0';
+		cur_term->kb_buf_length--;
 	}
   return;
 }

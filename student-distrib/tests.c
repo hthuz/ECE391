@@ -263,6 +263,7 @@ int terminal_test()
 	uint8_t* filename = 0;
 	int num; // return value of terminal_read
 	char buf[KB_BUF_SIZE + 1] = {'\0'};
+  termin_t* cur_term = get_terminal(cur_tid);
 	
 	terminal_open(filename);
 	// test termianl read
@@ -270,7 +271,7 @@ int terminal_test()
 	{
 		// printf("[391OS@localhost]$ ");
 		printf("user type: ");
-		num = terminal_read(fd, buf, kb_buf_length - 1);
+		num = terminal_read(fd, buf, cur_term->kb_buf_length - 1);
 		// if kb buffer is full, /n is not taken into account in buffer
 		// add a new line to make output clearer
 		if(num == KB_BUF_SIZE)

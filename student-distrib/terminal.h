@@ -27,6 +27,7 @@ struct termin_t
   int screen_x;
   int screen_y;
   unsigned char kb_buf[KB_BUF_SIZE];
+  int kb_buf_length;
   int pid;
   
 

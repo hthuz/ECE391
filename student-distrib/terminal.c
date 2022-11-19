@@ -6,6 +6,7 @@
 #include "lib.h"
 #include "syscall.h"
 #include "paging.h"
+#include "keyboard.h"
 
 
 int32_t cur_tid = 0;
@@ -52,9 +53,10 @@ int32_t terminal_close(int32_t fd)
  */
 int32_t terminal_read(int32_t fd, void *buf, int32_t nbytes)
 {
+    termin_t* cur_term = get_terminal(cur_tid);
     if (buf == NULL)
         return SYSCALL_FAIL;
-    if (nbytes < kb_buf_length + 1)
+    if (nbytes < cur_term->kb_buf_length + 1)
         return SYSCALL_FAIL;
     // do nothing until enter is pressed
     while (enter_pressed == 0);
@@ -62,7 +64,7 @@ int32_t terminal_read(int32_t fd, void *buf, int32_t nbytes)
     cli();
     int i;
     int j;
-    char *charbuf = buf;
+    char* charbuf = buf;
 
     // empty buf first
     for (i = 0; i <= nbytes; i++)
@@ -70,23 +72,21 @@ int32_t terminal_read(int32_t fd, void *buf, int32_t nbytes)
 
     // Copy kb_buf to dest buf
     // After loop, i becomes kb_buf_length
-    for(i = 0; i < kb_buf_length; i++)
-    {
-        charbuf[i] = kb_buf[i];
-    }
+    for(i = 0; i < cur_term->kb_buf_length; i++)
+        charbuf[i] = cur_term->kb_buf[i];
 
     // If kb_buf is full without /n, add one to termianl buf
     // i.e. there should always be \n at the end of terminal buf
-    if(kb_buf_length == KB_BUF_SIZE && kb_buf[KB_BUF_SIZE - 1] != '\n')
+    if(cur_term->kb_buf_length == KB_BUF_SIZE && cur_term->kb_buf[KB_BUF_SIZE - 1] != '\n')
     {
         charbuf[i] = '\n';
         i++;
     }
 
     // Clean kb_buf
-    for(j = 0; j < kb_buf_length; j++)
-        kb_buf[j] = '\0';
-    kb_buf_length = 0;
+    for(j = 0; j < cur_term->kb_buf_length; j++)
+        cur_term->kb_buf[j] = '\0';
+    cur_term->kb_buf_length = 0;
     enter_pressed = 0;
     sti();
     return i ;
@@ -126,6 +126,7 @@ void terminal_init()
 {
   int tid;
   int vid_addr;
+  int i;
   for(tid = 0; tid < MAX_TERM_NUM; tid++)
   {
     terminals[tid].invoked = 0;
@@ -140,11 +141,15 @@ void terminal_init()
     // Screen Position
     terminals[tid].screen_x = 0;
     terminals[tid].screen_y = 0;
+
+    // Keyboard buffer
+    for(i = 0; i < KB_BUF_SIZE; i++)
+      terminals[tid].kb_buf[i] = '\0';
+    terminals[tid].kb_buf_length = 0;
   }    
 
   // Terminal 0 is invoked 
   terminals[0].invoked = 1;
-
 }
 
 termin_t* get_terminal(int32_t tid)
@@ -172,6 +177,7 @@ void terminal_switch(int32_t new_tid)
   // Set new screen position
   screen_x = new_term->screen_x;
   screen_y = new_term->screen_y;
+  update_cursor(screen_x,screen_y);
 
   cur_tid = new_tid;
   if(new_term->invoked == 0)
