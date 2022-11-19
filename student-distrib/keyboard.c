@@ -1,26 +1,27 @@
+
 #include "keyboard.h"
 #include "lib.h"
 #include "i8259.h"
 
 /* Array for the characters without shift or CAPS */
 // Refer to https://wiki.osdev.org/Keyboard ScanCode set 1
-unsigned char scancode[80] =
+unsigned char scancode[0x3E] =
 	{
 		0, 0, '1', '2', '3', '4', '5', '6', '7', '8',
 		'9', '0', '-', '=', '\b', '\t', 'q', 'w', 'e', 'r',
 		't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\n', 0,
 		'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';',
 		'\'', '`', 0, '\\', 'z', 'x', 'c', 'v', 'b', 'n',
-		'm', ',', '.', '/', 0, 0, 0, ' ', 0, 0};
+		'm', ',', '.', '/', 0, 0, 0, ' ', 0, 0, 0, 0};
 
-unsigned char capital_scancode[80] =
+unsigned char capital_scancode[0x3E] =
 	{
 		0, 0, '!', '@', '#', '$', '%', '^', '&', '*',
 		'(', ')', '_', '+', '\b', 0, 'Q', 'W', 'E', 'R',
 		'T', 'Y', 'U', 'I', 'O', 'P', '{', '}', '\n', 0,
 		'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ':',
 		'\"', '~', 0, '|', 'Z', 'X', 'C', 'V', 'B', 'N',
-		'M', '<', '>', '?', 0, 0, 0, ' ', 0, 0};
+		'M', '<', '>', '?', 0, 0, 0, ' ', 0, 0, 0, 0};
 
 #define CTRL 0x1D // for right ctrl, generate two interrupts, first is 0xE0 and second is 0x1D
 #define REL_CTRL 0x9D
@@ -36,6 +37,10 @@ unsigned char capital_scancode[80] =
 #define CAPSLOCK 0x3A
 #define EXT_BYTE 0xE0
 #define CAPS_OFFSET 0x20 // 0x20 offset in ASCII between lower case and upper case letters
+
+#define FUNC1 0x3B
+#define FUNC2 0x3C
+#define FUNC3 0x3D
 
 int ctrl_pressed = 0;
 int shift_pressed = 0;
@@ -113,8 +118,29 @@ void keyboard_handler()
 		return;
 	}
 
+  // ALT + Function-key will switch terminal
+  if (alt_pressed == 1 && c == FUNC1)
+  {
+    send_eoi(KEY_IRQ);
+    terminal_switch(0);
+    return;
+  }
+  if (alt_pressed == 1 && c == FUNC2)
+  {
+    send_eoi(KEY_IRQ);
+    terminal_switch(1);
+    return;
+  }
+  if (alt_pressed == 1 && c == FUNC3)
+  {
+    send_eoi(KEY_IRQ);
+    terminal_switch(2);
+    return;
+  }
+
+
 	// if it is outside the scancode table, do not translate
-	if (c >= 80)
+	if (c >= 0x3E)
 	{
 		send_eoi(KEY_IRQ); 
 		return;

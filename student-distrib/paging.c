@@ -6,6 +6,7 @@
 #include "paging.h"
 #include "lib.h"
 #include "types.h"
+#include "terminal.h"
 
 pde_t p_dir[PDE_NUM] __attribute__((aligned (P_4K_SIZE)));
 pte_t p_table[PTE_NUM] __attribute__((aligned (P_4K_SIZE)));
@@ -84,7 +85,6 @@ char paging_init()
                                                                         // so lower 12 bits not required
   p_table[PTE_INDEX(VID_MEM_START)].present = 1;
 
-
   // paging for kernel memory
   // using 4MB paging
   p_dir[PDE_INDEX(P_4M_SIZE)].present = 1;
@@ -118,18 +118,3 @@ char paging_init()
 }
 
 
-// int main()
-// {
-//   int a;
-//   paging_init();
-
-//   for(a = 0; a < PDE_NUM; a++)
-//   {
-//     printf("%d, %d\n",a, p_dir[a].base_addr);
-//   }
-//   printf("Page table as follows\n");
-//   for(a = 0; a < PTE_NUM; a++)
-//   {
-//     printf("%d, %d\n ", a, p_table[a].base_addr);
-//   }
-// }

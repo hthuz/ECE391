@@ -15,6 +15,7 @@
 #include "paging.h"
 #include "file.h"
 #include "syscall.h"
+#include "terminal.h"
 #define RUN_TESTS
 
 /* Macros. */
@@ -160,6 +161,10 @@ void entry(unsigned long magic, unsigned long addr) {
 	// Initialize Paging
     paging_init();
 
+	// Initialize terminal
+	terminal_init();
+	
+
 	// Enalbe interrupt
     sti();
 
@@ -169,7 +174,8 @@ void entry(unsigned long magic, unsigned long addr) {
     // launch_tests();
 #endif
     /* Execute the first program ("shell") ... */
-optable_init();	
+	optable_init();	
+	printf("TERMINAL #%d\n",cur_tid);
 	execute((uint8_t*)"shell");
 
     /* Spin (nicely, so we don't chew up cycles) */
