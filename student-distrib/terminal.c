@@ -53,18 +53,18 @@ int32_t terminal_close(int32_t fd)
  */
 int32_t terminal_read(int32_t fd, void *buf, int32_t nbytes)
 {
-    termin_t* cur_term = get_terminal(cur_tid);
     if (buf == NULL)
         return SYSCALL_FAIL;
-    if (nbytes < cur_term->kb_buf_length + 1)
-        return SYSCALL_FAIL;
-    // do nothing until enter is pressed
+        // do nothing until enter is pressed
     while (enter_pressed == 0);
 
     cli();
     int i;
     int j;
     char* charbuf = buf;
+    termin_t* cur_term = get_terminal(cur_tid);
+    if (nbytes < cur_term->kb_buf_length + 1)
+        return SYSCALL_FAIL;
 
     // empty buf first
     for (i = 0; i <= nbytes; i++)
