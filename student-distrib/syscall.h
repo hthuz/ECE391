@@ -7,6 +7,9 @@
 #include "file.h"
 #include "paging.h"
 
+// All three base shells share the same parent_pid ROOT
+#define ROOT_PID -1; 
+
 #define SYSCALL_FAIL -1;
 // A header occupies first 40 bytes that gives information about load and starting
 #define FHEADER_LEN 40
@@ -23,7 +26,7 @@
 #define K_TASK_STACK_SIZE (P_4K_SIZE * 2) // task's kernel stack size
 #define K_BASE (P_4M_SIZE * 2)            // Base address of kernel
 #define PROG_IMAGE_ADDR 0x08048000
-#define MAX_PROC_NUM 6
+#define MAX_TASK_NUM 6
 
 #define CASE_RTC 0
 #define CASE_FILE 2
@@ -86,5 +89,18 @@ pcb_t *get_pcb(int32_t pid);
 
 // Initialize all file arrays
 void optable_init();
+
+// checkout executable
+int check_exec(uint8_t* usr_cmd);
+
+// parse arguments
+int parse_args(const uint8_t* command, uint8_t* usr_cmd, uint8_t* usr_args);
+
+// create PCB
+pcb_t* create_pcb(int32_t pid,uint8_t* usr_args);
+
+
+// context switch  
+void context_switch(uint8_t* usr_cmd);
 
 #endif

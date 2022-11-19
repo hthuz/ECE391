@@ -11,8 +11,11 @@
 #define SYSCALL_FAIL -1;
 
 // Initially, there is no process, denote as -1
-int32_t cur_pid = -1;
-extern int32_t cur_tid;
+int32_t cur_pid = ROOT_PID;
+
+int task_num = 0;
+// An array keeps track of all active tasks
+int running_tasks[MAX_TASK_NUM] = {0};
 
 extern pde_t p_dir[PDE_NUM] __attribute__((aligned(P_4K_SIZE)));
 extern nodes_block *mynode;
@@ -95,128 +98,31 @@ int32_t execute(const uint8_t *command)
 {
   pcb_t *pcb;               // PCB of program
   int32_t parent_pid;       // Record of parent id
-  dentry_t dentry;          // dentry of program file
-  nodes_block *inode;       // inode of program file
-  uint8_t buf[FHEADER_LEN]; // buf containing bytes of the file
-  int32_t entry_pt;         // Entry point into the program (EIP)
-  int32_t user_esp;         // ESP for user program
-  int32_t i;                // Index for loop
   uint8_t usr_cmd[ARG_LEN];
   uint8_t usr_args[ARG_LEN];
-  uint32_t cmd_len = 0; // if com_len=6, sep[0-5], and sep[6]='\0'
-  uint32_t args_len = 0;
-  uint32_t command_length = strlen((int8_t *)command);
 
-  // 1. Parse args
-
-  if (command == NULL)
+  if(parse_args(command, usr_cmd, usr_args) == -1)
     return -1;
-  // get sep_command
-  i = 0;
-  while (command[i] == ' ')
-    i++;
-  while (command[i] != ' ' && command[i] != '\0' && i <= command_length)
-    usr_cmd[cmd_len++] = command[i++];
-  usr_cmd[cmd_len] = '\0';
 
-  if (command[i] == ' ')
-  {
-    while (command[i] == ' ')
-      i++;
-    while (command[i] != ' ' && command[i] != '\0' && i <= command_length)
-      usr_args[args_len++] = command[i++];
-    usr_args[args_len] = '\0';
-  }
-
-  // check user comnand
-  if (read_dentry_by_name(usr_cmd, &dentry) == -1)
-    return -1;
-  inode = (nodes_block *)(mynode + dentry.inode);
-
-  // 2. Check for executable
-  if (dentry.filetype != FILE_TYPE)
-    return -1;
-  if (read_data(dentry.inode, 0, buf, FHEADER_LEN) != FHEADER_LEN)
-    return -1;
-  if (buf[0] != EXE_MAGIC1 || buf[1] != EXE_MAGIC2 ||
-      buf[2] != EXE_MAGIC3 || buf[3] != EXE_MAGIC4)
+  if(check_exec(usr_cmd) == -1)
     return -1;
 
   // record parentid and current id
   parent_pid = cur_pid;
   cur_pid++;
-
-  if (cur_pid == MAX_PROC_NUM)
+  if (cur_pid == MAX_TASK_NUM)
   {
     cur_pid--;
     printf("Can't Create More Processes\n");
     return -1;
   }
 
-  // 3. Set up paging
   set_process_paging(cur_pid);
 
-  // 4. Load file into program image
-  read_data(dentry.inode, 0, (uint8_t *)PROG_IMAGE_ADDR, inode->length);
+  pcb = create_pcb(cur_pid, usr_args);
 
-  // 5. Create PCB
-  pcb = get_pcb(cur_pid);
-  pcb->pid = cur_pid;
-  pcb->parent_pid = parent_pid;
+  context_switch(usr_cmd);
 
-
-  for(i = 0; i < ARG_LEN; i++)
-    pcb->args[i] = '\0';
-  if (args_len > 0)
-  {
-    for (i = 0; i <= args_len; i++)
-      pcb->args[i] = usr_args[i];
-  }
-  pcb->use_vid = 0;
-
-  // Initialize File array
-  // flag 0: inactive
-  // flag 1: active
-  for (i = 0; i < FARRAY_SIZE; i++)
-  {
-    pcb->farray[i].flags = 0;
-  }
-  // File array for stdin
-  pcb->farray[0].optable_ptr = &stdin_optable;
-  pcb->farray[0].flags = 1;
-
-  // File array for stdout
-  pcb->farray[1].optable_ptr = &stdout_optable;
-  pcb->farray[1].flags = 1;
-
-  // Store EBP and ESP
-  register uint32_t saved_ebp asm("ebp");
-  register uint32_t saved_esp asm("esp");
-  pcb->saved_ebp = saved_ebp;
-  pcb->saved_esp = saved_esp;
-
-  // 6. Prepare for Context Switch
-  user_esp = P_128M_SIZE + P_4M_SIZE - sizeof(int32_t);
-  // Entry point is stored in bytes 24-27 of the executable
-  // Use these four bytes as EIP
-  entry_pt = (buf[27] << 24) | (buf[26] << 16) | (buf[25] << 8) | (buf[24]);
-
-  tss.ss0 = KERNEL_DS;
-  tss.esp0 = K_BASE - (pcb->pid) * K_TASK_STACK_SIZE - sizeof(int32_t);
-
-  // 7. Push IRET context to kernel stack
-  // Reference: https://wiki.osdev.org/Getting_to_Ring_3
-  asm volatile(
-      "movw %%ax, %%ds;"
-      "pushl %%eax;"
-      "pushl %%ebx;"
-      "pushfl;"
-      "pushl %%ecx;"
-      "pushl %%edx;"
-      "iret;"
-      :
-      : "a"(USER_DS), "b"(user_esp), "c"(USER_CS), "d"(entry_pt)
-      : "memory");
   return 0;
 }
 
@@ -544,4 +450,145 @@ void optable_init()
   dir_optable.close = directory_close;
   dir_optable.read = directory_read;
   dir_optable.write = directory_write;
+}
+
+
+int parse_args(const uint8_t *command, uint8_t* usr_cmd, uint8_t* usr_args)
+{
+  int i;
+  uint32_t cmd_len = 0;
+  uint32_t args_len = 0;
+  uint32_t command_length = strlen((int8_t*) command);
+
+  if (command == NULL)
+    return -1;
+
+  // Empty usr_cmd and usr_args first  
+  for(i = 0; i < ARG_LEN; i++)
+  {
+    usr_cmd[i] = '\0';
+    usr_args[i] = '\0';
+  }
+  i = 0;
+
+  while (command[i] == ' ')
+    i++;
+  while (command[i] != ' ' && command[i] != '\0' && i <= command_length)
+    usr_cmd[cmd_len++] = command[i++];
+  usr_cmd[cmd_len] = '\0';
+
+  if (command[i] == ' ')
+  {
+    while (command[i] == ' ')
+      i++;
+    while (command[i] != ' ' && command[i] != '\0' && i <= command_length)
+      usr_args[args_len++] = command[i++];
+    usr_args[args_len] = '\0';
+  }
+  return 0;
+}
+
+
+int check_exec(uint8_t* usr_cmd)
+{
+  dentry_t dentry;          // dentry of program file
+  nodes_block *inode;       // inode of program file
+  uint8_t buf[FHEADER_LEN]; // buf containing bytes of the file
+
+  // Check user comnand
+  if (read_dentry_by_name(usr_cmd, &dentry) == -1)
+    return -1;
+  inode = (nodes_block *)(mynode + dentry.inode);
+  if (dentry.filetype != FILE_TYPE)
+    return -1;
+  if (read_data(dentry.inode, 0, buf, FHEADER_LEN) != FHEADER_LEN)
+    return -1;
+  if (buf[0] != EXE_MAGIC1 || buf[1] != EXE_MAGIC2 ||
+      buf[2] != EXE_MAGIC3 || buf[3] != EXE_MAGIC4)
+    return -1;
+
+  return 0;
+
+}
+
+pcb_t* create_pcb(int32_t pid, uint8_t* usr_args)
+{
+  int i;
+  pcb_t* pcb;
+
+  pcb = get_pcb(pid);
+  pcb->pid = pid;
+  pcb->parent_pid = pid - 1;
+
+  for(i = 0; i < ARG_LEN; i++)
+    pcb->args[i] = '\0';
+  if (strlen((const int8_t*)usr_args) > 0)
+  {
+    for (i = 0; i <= strlen((const int8_t*)usr_args); i++)
+      pcb->args[i] = usr_args[i];
+  }
+  pcb->use_vid = 0;
+
+  // Initialize File array
+  // flag 0: inactive
+  // flag 1: active
+  for (i = 0; i < FARRAY_SIZE; i++)
+  {
+    pcb->farray[i].flags = 0;
+  }
+  // File array for stdin
+  pcb->farray[0].optable_ptr = &stdin_optable;
+  pcb->farray[0].flags = 1;
+
+  // File array for stdout
+  pcb->farray[1].optable_ptr = &stdout_optable;
+  pcb->farray[1].flags = 1;
+
+  // Store EBP and ESP
+  register uint32_t saved_ebp asm("ebp");
+  register uint32_t saved_esp asm("esp");
+  pcb->saved_ebp = saved_ebp;
+  pcb->saved_esp = saved_esp;
+
+  return pcb;
+}
+
+
+
+void context_switch(uint8_t* usr_cmd)
+{
+  dentry_t dentry;
+  nodes_block *inode;       // inode of program file
+  uint8_t buf[FHEADER_LEN]; // buf containing bytes of the file
+  int32_t entry_pt;         // Entry point into the program (EIP)
+                            
+  read_dentry_by_name(usr_cmd, &dentry);
+  inode = (nodes_block *)(mynode + dentry.inode);
+  read_data(dentry.inode, 0, buf, FHEADER_LEN);
+  
+  // Load file into program image
+  read_data(dentry.inode, 0, (uint8_t *)PROG_IMAGE_ADDR, inode->length);
+
+  // Entry point is stored in bytes 24-27 of the executable
+  entry_pt = (buf[27] << 24) | (buf[26] << 16) | (buf[25] << 8) | (buf[24]);
+
+
+  int32_t usr_esp;
+  usr_esp = P_128M_SIZE + P_4M_SIZE - sizeof(int32_t);
+
+  tss.ss0 = KERNEL_DS;
+  tss.esp0 = K_BASE - (cur_pid) * K_TASK_STACK_SIZE - sizeof(int32_t);
+  // push iret context to kernel stack
+  // reference: https://wiki.osdev.org/getting_to_ring_3
+  asm volatile(
+      "movw %%ax, %%ds;"
+      "pushl %%eax;"
+      "pushl %%ebx;"
+      "pushfl;"
+      "pushl %%ecx;"
+      "pushl %%edx;"
+      "iret;"
+      :
+      : "a"(USER_DS), "b"(usr_esp), "c"(USER_CS), "d"(entry_pt)
+      : "memory");
 }
