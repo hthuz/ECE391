@@ -122,6 +122,15 @@ int32_t terminal_write(int32_t fd, const void *buf, int32_t nbytes)
 
 
 
+/*
+ * terminal_init
+ *   DESCRIPTION: initialize multi-terminal
+ *                and invoke termianl 0 by default
+ *     INPUTS: none
+ *     OUTPUTS: none
+ *     RETURN VALUE: none
+ *     SIDE EFFECTS: none
+ */
 void terminal_init()
 {
   int tid;
@@ -152,11 +161,30 @@ void terminal_init()
   terminals[0].invoked = 1;
 }
 
+/*
+ * get_terminal
+ *   DESCRIPTION: Get pointer to terminal struct 
+ *                based on terminal id
+ *   INPUTS: tid -- terminal id(0,1,2)
+ *   OUTPUTS: none
+ *   RETURN VALUE: The corresponding termianl struct
+ *   SIDE EFFECTS: none
+ */
 termin_t* get_terminal(int32_t tid)
 {
   return &terminals[tid];
 }
 
+
+/*
+ * terminal_init
+ *   DESCRIPTION: When Alt+ Funckey is pressed,
+ *                Do termianl switch staff
+ *   INPUTS: new_tid -- terminal id to switch into
+ *   OUTPUTS: none
+ *   RETURN VALUE: none
+ *   SIDE EFFECTS: none
+ */
 void terminal_switch(int32_t new_tid)
 {
   // If Switch to the same terminal, do nothing
@@ -180,6 +208,8 @@ void terminal_switch(int32_t new_tid)
   update_cursor(screen_x,screen_y);
 
   cur_tid = new_tid;
+
+  // Start new shell if it's not invoked
   if(new_term->invoked == 0)
   {
     new_term->invoked = 1;

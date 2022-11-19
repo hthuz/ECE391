@@ -452,7 +452,18 @@ void optable_init()
   dir_optable.write = directory_write;
 }
 
-
+/*
+ * parse_args
+ *   DESCRIPTION: Helper function for execute
+ *                Given command, divide into to command part and argumetns part
+ *   INPUTS: command -- user type
+ *           usr_cmd -- an array to contain user command
+ *           usr_args -- an array to contain user arguments
+ *   OUTPUTS: none
+ *   RETURN VALUE: -1 if command is invalid
+ *                  0 otherwise
+ *   SIDE EFFECTS: results are stored in usr_cmd and usr_args
+ */
 int parse_args(const uint8_t *command, uint8_t* usr_cmd, uint8_t* usr_args)
 {
   int i;
@@ -489,6 +500,16 @@ int parse_args(const uint8_t *command, uint8_t* usr_cmd, uint8_t* usr_args)
 }
 
 
+/*
+ * check_exec
+ *   DESCRIPTION: Helper function for execute
+ *                Check if user command is valid, executable etc
+ *   INPUTS: usr_cmd -- user command
+ *   OUTPUTS: none
+ *   RETURN VALUE: -1 if user command is invalid/not executable
+ *                  0 if valid
+ *   SIDE EFFECTS: none
+ */ 
 int check_exec(uint8_t* usr_cmd)
 {
   dentry_t dentry;          // dentry of program file
@@ -511,6 +532,17 @@ int check_exec(uint8_t* usr_cmd)
 
 }
 
+
+/*
+ * create_pcb
+ *   DESCRIPTION: Helper function for execute
+ *                Given process id and user_args, set up PCB
+ *                for this Process
+ *   INPUTS: pid -- process id for corresponding PCB
+ *   OUTPUTS: none
+ *   RETURN VALUE: the created pcb
+ *   SIDE EFFECTS: none
+ */
 pcb_t* create_pcb(int32_t pid, uint8_t* usr_args)
 {
   int i;
@@ -554,7 +586,17 @@ pcb_t* create_pcb(int32_t pid, uint8_t* usr_args)
 }
 
 
-
+/*
+ * context_switch
+ *   DESCRIPTION: Helper function for execute
+ *                Load the program
+ *                Do Context Switch staff
+ *   INPUTS: usr_cmd -- name of the program to execute
+ *   OUTPUTS: none
+ *   RETURN VALUE: none
+ *   SIDE EFFECTS: should be used after check_exec 
+ *                 as this function doesn't not check anything
+ */
 void context_switch(uint8_t* usr_cmd)
 {
   dentry_t dentry;
@@ -571,7 +613,6 @@ void context_switch(uint8_t* usr_cmd)
 
   // Entry point is stored in bytes 24-27 of the executable
   entry_pt = (buf[27] << 24) | (buf[26] << 16) | (buf[25] << 8) | (buf[24]);
-
 
   int32_t usr_esp;
   usr_esp = P_128M_SIZE + P_4M_SIZE - sizeof(int32_t);
