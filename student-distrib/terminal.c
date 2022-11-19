@@ -165,11 +165,6 @@ void terminal_switch(int32_t new_tid)
   // Set new terminal video memory
   memcpy((void*) VID_MEM_START, (const void*)new_term->video_mem, P_4K_SIZE);
 
-  char* video_array = (char*) VID_MEM_START;
-  char* new_array = new_term->video_mem;
-  char* cur_array = cur_term->video_mem;
-
-
   // Save screen positoin
   cur_term->screen_x = screen_x;
   cur_term->screen_y = screen_y;

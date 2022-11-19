@@ -10,11 +10,13 @@
 #include "keyboard.h"
 
 #define MAX_TERM_NUM 3
+// Don't know why but the following example fails
+// Fail to copy memory
 // Terminal 0: 800KB - 0xC8000
 // Terminal 1: 900KB - 0xE1000
 // Termiaal 2: 1000KB  - 0xFA000 
-#define TERM_VID_ADDR(tid) ((tid) * 25 * P_4K_SIZE + 200 * P_4K_SIZE)
-
+// #define TERM_VID_ADDR(tid) ((tid) * 25 * P_4K_SIZE + 200 * P_4K_SIZE)
+#define TERM_VID_ADDR(tid) (VID_MEM_START + (tid + 2) * P_4K_SIZE)
 
 extern int32_t cur_tid;
 
