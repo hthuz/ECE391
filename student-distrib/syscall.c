@@ -41,11 +41,11 @@ int32_t halt(uint8_t status)
   pcb_t *cur_pcb = get_pcb(cur_pid);
   // Restore parent data
   // if it is the original shell
-  if (cur_pid == 0)
+  if(cur_pcb->parent_pid == -1)
   {
     printf("Can't Exit Base Shell\n");
     cur_pid = ROOT_PID;
-    running_tasks[0] = 0;
+    running_tasks[cur_pcb->pid] = 0;
     task_num--;
     execute((uint8_t *)"shell");
   }
@@ -101,9 +101,11 @@ int32_t execute(const uint8_t *command)
 {
   pcb_t *pcb;               // PCB of program
   int32_t parent_pid;       // Record of parent id
-  int32_t new_pid;
+  int32_t new_pid;          // new pid for this newly executed program
   uint8_t usr_cmd[ARG_LEN];
   uint8_t usr_args[ARG_LEN];
+  termin_t* cur_term = get_terminal(cur_tid);
+
 
   if(parse_args(command, usr_cmd, usr_args) == -1)
     return -1;
@@ -114,8 +116,19 @@ int32_t execute(const uint8_t *command)
   // record parentid and current id
   if(-1 == ( new_pid = create_pid() ))
     return -1;
-  parent_pid = cur_pid;
-  cur_pid = new_pid;
+   
+  if(term_switch_flag == 1)
+  {
+    parent_pid = ROOT_PID;
+    cur_pid = new_pid;
+    cur_term->pid = cur_pid;
+    term_switch_flag = 0;
+  }
+  else
+  {
+    parent_pid = cur_pid;
+    cur_pid = new_pid;
+  }
 
   set_process_paging(cur_pid);
 

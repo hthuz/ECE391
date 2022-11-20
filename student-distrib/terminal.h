@@ -19,6 +19,7 @@
 #define TERM_VID_ADDR(tid) (VID_MEM_START + (tid + 2) * P_4K_SIZE)
 
 extern int32_t cur_tid;
+extern int term_switch_flag;
 
 struct termin_t
 {

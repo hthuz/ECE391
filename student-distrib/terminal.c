@@ -10,6 +10,7 @@
 
 
 int32_t cur_tid = 0;
+int term_switch_flag = 0;
 termin_t terminals[MAX_TERM_NUM];
 
 /* terminal_open
@@ -214,6 +215,7 @@ void terminal_switch(int32_t new_tid)
   {
     new_term->invoked = 1;
     printf("TERMINAL #%d\n",cur_tid);
+    term_switch_flag = 1;
     execute((uint8_t *)"shell");
   }
 }
