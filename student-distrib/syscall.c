@@ -44,11 +44,14 @@ int32_t halt(uint8_t status)
   if (cur_pid == 0)
   {
     printf("Can't Exit Base Shell\n");
-    cur_pid = -1;
+    cur_pid = ROOT_PID;
+    running_tasks[0] = 0;
+    task_num--;
     execute((uint8_t *)"shell");
   }
 
   // Note now cur_pid has become parent_pid
+  free_pid(cur_pid);
   cur_pid = cur_pcb->parent_pid;
 
   tss.ss0 = KERNEL_DS;
@@ -98,6 +101,7 @@ int32_t execute(const uint8_t *command)
 {
   pcb_t *pcb;               // PCB of program
   int32_t parent_pid;       // Record of parent id
+  int32_t new_pid;
   uint8_t usr_cmd[ARG_LEN];
   uint8_t usr_args[ARG_LEN];
 
@@ -108,18 +112,14 @@ int32_t execute(const uint8_t *command)
     return -1;
 
   // record parentid and current id
-  parent_pid = cur_pid;
-  cur_pid++;
-  if (cur_pid == MAX_TASK_NUM)
-  {
-    cur_pid--;
-    printf("Can't Create More Processes\n");
+  if(-1 == ( new_pid = create_pid() ))
     return -1;
-  }
+  parent_pid = cur_pid;
+  cur_pid = new_pid;
 
   set_process_paging(cur_pid);
 
-  pcb = create_pcb(cur_pid, usr_args);
+  pcb = create_pcb(cur_pid,parent_pid, usr_args);
 
   context_switch(usr_cmd);
 
@@ -539,18 +539,20 @@ int check_exec(uint8_t* usr_cmd)
  *                Given process id and user_args, set up PCB
  *                for this Process
  *   INPUTS: pid -- process id for corresponding PCB
+ *           parent_pid -- parent_pid for this PCB
+ *           usr_args -- user arguments for this PCB
  *   OUTPUTS: none
  *   RETURN VALUE: the created pcb
  *   SIDE EFFECTS: none
  */
-pcb_t* create_pcb(int32_t pid, uint8_t* usr_args)
+pcb_t* create_pcb(int32_t pid, int32_t parent_pid,  uint8_t* usr_args)
 {
   int i;
   pcb_t* pcb;
 
   pcb = get_pcb(pid);
   pcb->pid = pid;
-  pcb->parent_pid = pid - 1;
+  pcb->parent_pid = parent_pid;
 
   for(i = 0; i < ARG_LEN; i++)
     pcb->args[i] = '\0';
@@ -632,4 +634,55 @@ void context_switch(uint8_t* usr_cmd)
       :
       : "a"(USER_DS), "b"(usr_esp), "c"(USER_CS), "d"(entry_pt)
       : "memory");
+}
+
+
+
+/*
+ * create_pid
+ *   DESCRIPTION: Create one pid for new task
+ *   INPUTS: none
+ *   OUTPUTS: none
+ *   RETURN VALUE: created pid from free pids if success
+ *                 -1 if fail
+ *   SIDE EFFECTS: Will mark one additional process as running
+ *
+ */
+int32_t create_pid()
+{
+  int pid = 0;
+
+  if(task_num == MAX_TASK_NUM)
+  {
+    printf("Can't Create More Processes\n");
+    return -1;
+  }
+  
+
+  for(pid = 0; pid < MAX_TASK_NUM; pid++)
+  {
+    if(running_tasks[pid] == 0)
+    {
+      running_tasks[pid] = 1;
+      break;
+    }
+  }
+
+  task_num++;
+  return pid;
+}
+
+/*
+ * free_pid
+ *   DESCRIPTOIN: Free one pid from running tasks
+ *                after one task halts
+ *   INPUTS: pid -- pid to be freed
+ *   OUTPUTS: none
+ *   RETURN VALUE: none
+ *   SIDE EFFECTS: none
+ */
+void free_pid(int32_t pid)
+{
+  running_tasks[pid] = 0;
+  task_num--;
 }

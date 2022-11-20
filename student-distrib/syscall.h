@@ -97,10 +97,16 @@ int check_exec(uint8_t* usr_cmd);
 int parse_args(const uint8_t* command, uint8_t* usr_cmd, uint8_t* usr_args);
 
 // create PCB
-pcb_t* create_pcb(int32_t pid,uint8_t* usr_args);
+pcb_t* create_pcb(int32_t pid, int32_t parent_pid, uint8_t* usr_args);
 
 
 // context switch  
 void context_switch(uint8_t* usr_cmd);
+
+// Allocate one pid from free ones;
+int32_t create_pid();
+
+// Free one pid from running tasks
+void free_pid(int32_t pid);
 
 #endif
