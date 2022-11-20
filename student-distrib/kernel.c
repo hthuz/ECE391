@@ -16,6 +16,7 @@
 #include "file.h"
 #include "syscall.h"
 #include "terminal.h"
+#include "schedule.h"
 #define RUN_TESTS
 
 /* Macros. */
@@ -155,6 +156,9 @@ void entry(unsigned long magic, unsigned long addr) {
     keyboard_init();
 	cursor_init();
 
+	// Initialize PIT
+	pit_init();
+	
 	// Initialize RTC
     rtc_init();
 

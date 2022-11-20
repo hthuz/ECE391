@@ -32,10 +32,12 @@ idt_fill(){
         idt[i].present=1;
     }
     idt[15].present=0;      // magic number 15 because we don't use that
+    idt[PIT_PORT].present = 1;
     idt[keyboard_port].present=1;      
     idt[rtc_port].present=1;
     idt[sys_call_port].present=1;
 
+    idt[PIT_PORT].reserved3 = 0;
     idt[keyboard_port].reserved3=0;
     idt[rtc_port].reserved3=0;
     idt[sys_call_port].dpl=3;
@@ -59,6 +61,7 @@ idt_fill(){
     SET_IDT_ENTRY(idt[17],idt_17);  //alignment_check
     SET_IDT_ENTRY(idt[18],idt_18);  //machine_check
     SET_IDT_ENTRY(idt[19],idt_19);  //simd_coprocessor_error
+    SET_IDT_ENTRY(idt[PIT_PORT],pit_linkage);
     SET_IDT_ENTRY(idt[keyboard_port],keyboard_linkage);
     SET_IDT_ENTRY(idt[rtc_port],rtc_linkage);
     SET_IDT_ENTRY(idt[sys_call_port],sys_call_linkage);

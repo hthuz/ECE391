@@ -4,6 +4,7 @@
 #include "x86_desc.h"
 
 // magic numbers
+#define PIT_PORT 0x20
 #define keyboard_port  0x21
 #define rtc_port  0x28
 #define sys_call_port  0x80

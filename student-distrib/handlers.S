@@ -6,9 +6,14 @@ sys_call_table:
 .long 0, halt, execute, read, write, open, close, getargs, vidmap, set_handler, sigreturn
 
 .text
-.global keyboard_linkage,rtc_linkage, sys_call_linkage
+.global pit_linkage, keyboard_linkage,rtc_linkage, sys_call_linkage
 
-# two handlers used to link the asm and c functions
+pit_linkage:
+    pushal 
+    call pit_handler
+    popal
+    iret
+
 keyboard_linkage:
     pushal
     call keyboard_handler
