@@ -32,6 +32,9 @@
 #define CASE_FILE 2
 #define CASE_DIR 1
 // #define CASE_TERMINAL 3
+extern int32_t cur_pid;
+extern int running_tasks[MAX_TASK_NUM];
+extern int task_num;
 
 typedef struct optable_t
 {
@@ -62,6 +65,7 @@ typedef struct pcb_t
   uint32_t use_vid;
 } pcb_t;
 
+void show_task();
 // System call functions
 int32_t halt(uint8_t status);
 int32_t execute(const uint8_t *command);

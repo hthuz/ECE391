@@ -101,13 +101,14 @@ gdt_desc:
     .long gdt
 # --------------
 
-# ---IDT part---
+
 ldt:
     .rept 4
     .quad 0
     .endr
 ldt_bottom:
 
+# ---IDT part---
 .align 4
     .word 0 # Padding
 idt_desc_ptr:

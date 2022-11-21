@@ -26,6 +26,15 @@ optable_t rtc_optable;
 optable_t file_optable;
 optable_t dir_optable;
 
+
+void show_task()
+{
+  int i;
+  for(i = 0; i < 6; i++)
+    printf("%d ",running_tasks[i]);
+  printf("\n");
+}
+
 /*
  * halt
  *   DESCRIPTION: halt a program, if it is the process 0 shell,
@@ -597,7 +606,7 @@ pcb_t* create_pcb(int32_t pid, int32_t parent_pid,  uint8_t* usr_args)
   register uint32_t saved_esp asm("esp");
   pcb->saved_ebp = saved_ebp;  // 0x7FFE60 for shell 0x7FFE98 for first program
   pcb->saved_esp = saved_esp;  // 0x7FFE38 for shell 0x7FFE70 for first program
-  printf("esp: %x, ebp: %x\n",saved_esp, saved_ebp);
+  // printf("esp: %x, ebp: %x\n",saved_esp, saved_ebp);
 
   return pcb;
 }

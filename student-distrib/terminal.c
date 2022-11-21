@@ -90,6 +90,10 @@ int32_t terminal_read(int32_t fd, void *buf, int32_t nbytes)
     cur_term->kb_buf_length = 0;
     enter_pressed = 0;
     sti();
+
+    if(0 == strncmp(charbuf, "ps\n",3))
+      show_task();
+
     return i ;
 }
 
@@ -208,6 +212,7 @@ void terminal_switch(int32_t new_tid)
   screen_y = new_term->screen_y;
   update_cursor(screen_x,screen_y);
 
+  cur_pid = new_term->pid;
   cur_tid = new_tid;
 
   // Start new shell if it's not invoked
@@ -219,6 +224,7 @@ void terminal_switch(int32_t new_tid)
     execute((uint8_t *)"shell");
   }
 }
+
 
 
 

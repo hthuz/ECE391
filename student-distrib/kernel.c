@@ -112,11 +112,11 @@ void entry(unsigned long magic, unsigned long addr) {
         the_ldt_desc.reserved    = 0x0;
         the_ldt_desc.avail       = 0x0;
         the_ldt_desc.present     = 0x1;
-        the_ldt_desc.dpl         = 0x0;
+        the_ldt_desc.dpl         = 0x0; // DPL 0
         the_ldt_desc.sys         = 0x0;
-        the_ldt_desc.type        = 0x2;
+        the_ldt_desc.type        = 0x2; // Data (Read/Write)
 
-        SET_LDT_PARAMS(the_ldt_desc, &ldt, ldt_size);
+        SET_LDT_PARAMS(the_ldt_desc, &ldt, ldt_size); //&ldt: 0x400156, ldt_size: 31
         ldt_desc_ptr = the_ldt_desc;
         lldt(KERNEL_LDT);
     }
@@ -130,18 +130,18 @@ void entry(unsigned long magic, unsigned long addr) {
         the_tss_desc.avail         = 0x0;
         the_tss_desc.seg_lim_19_16 = TSS_SIZE & 0x000F0000;
         the_tss_desc.present       = 0x1;
-        the_tss_desc.dpl           = 0x0;
+        the_tss_desc.dpl           = 0x0; // DPL 0
         the_tss_desc.sys           = 0x0;
-        the_tss_desc.type          = 0x9;
+        the_tss_desc.type          = 0x9; // Code (Execute-only, accessed)
         the_tss_desc.seg_lim_15_00 = TSS_SIZE & 0x0000FFFF;
 
-        SET_TSS_PARAMS(the_tss_desc, &tss, tss_size);
+        SET_TSS_PARAMS(the_tss_desc, &tss, tss_size);  //&tss: 0x4000a0, tss_size:103
 
         tss_desc_ptr = the_tss_desc;
 
         tss.ldt_segment_selector = KERNEL_LDT;
         tss.ss0 = KERNEL_DS;
-        tss.esp0 = 0x800000;
+        tss.esp0 = 0x800000; 
         ltr(KERNEL_TSS);
     }
     clear();
@@ -180,6 +180,9 @@ void entry(unsigned long magic, unsigned long addr) {
     /* Execute the first program ("shell") ... */
 	optable_init();	
 	printf("TERMINAL #%d\n",cur_tid);
+    // Shell 0 always has pid 0
+    termin_t* term_0 = get_terminal(cur_tid);
+    term_0->pid = 0;
 	execute((uint8_t*)"shell");
 
     /* Spin (nicely, so we don't chew up cycles) */
