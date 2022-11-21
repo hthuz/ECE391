@@ -51,6 +51,7 @@ int32_t halt(uint8_t status)
   }
 
   // Note now cur_pid has become parent_pid
+  // But cur_pcb doesn't change
   free_pid(cur_pid);
   cur_pid = cur_pcb->parent_pid;
 
@@ -594,8 +595,9 @@ pcb_t* create_pcb(int32_t pid, int32_t parent_pid,  uint8_t* usr_args)
   // Store EBP and ESP
   register uint32_t saved_ebp asm("ebp");
   register uint32_t saved_esp asm("esp");
-  pcb->saved_ebp = saved_ebp;
-  pcb->saved_esp = saved_esp;
+  pcb->saved_ebp = saved_ebp;  // 0x7FFE60 for shell 0x7FFE98 for first program
+  pcb->saved_esp = saved_esp;  // 0x7FFE38 for shell 0x7FFE70 for first program
+  printf("esp: %x, ebp: %x\n",saved_esp, saved_ebp);
 
   return pcb;
 }

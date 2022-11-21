@@ -27,6 +27,8 @@ ldt_desc:
     .long ldt
 
     .align 4
+
+# ---TSS part---
 tss:
 _tss:
     .rept 104
@@ -35,13 +37,17 @@ _tss:
 tss_bottom:
 
     .align  16
+
+# --------------
+
+# ---GDT part---
 gdt:
 _gdt:
 
-    # First GDT entry cannot be used
+    # First GDT entry cannot be used (index 0)
     .quad 0
 
-    # NULL entry
+    # NULL entry (index 1)
     .quad 0
 
     # Segmentation will not be used
@@ -62,29 +68,40 @@ _gdt:
     # |----------------------------------------------------------------------|
 
 gdt_ptr:
-    # Set up an entry for kernel CS
+    # segment limit 4G
+    # base 0
+    # segment present 1
+    # descriptor type code or data segment
+    # Set up an entry for kernel CS (index 2) (DPL 0) (Type A (code, execute/read))
     .quad 0x00CF9A000000FFFF
 
-    # Set up an entry for kernel DS
+    # Set up an entry for kernel DS (index 3) (DPL 0) (Type 2 (data, read/write))
     .quad 0x00CF92000000FFFF
 
-    # Set up an entry for user CS
+    # Set up an entry for user CS (index 4) (DPL 3) (Type A (code, execute/read))
     .quad 0x00CFFA000000FFFF
 
-    # Set up an entry for user DS
+    # Set up an entry for user DS (index 5) (DPL 3) (Type 2 (data, read/write))
     .quad 0x00CFF2000000FFFF
 
-    # Set up an entry for TSS
+    # Set up an entry for TSS (index 6)
 tss_desc_ptr:
     .quad 0
 
-    # Set up one LDT
+    # Set up one LDT (index 7)
 ldt_desc_ptr:
     .quad 0
 
 gdt_bottom:
 
     .align 16
+
+gdt_desc:
+    .word gdt_bottom - gdt - 1
+    .long gdt
+# --------------
+
+# ---IDT part---
 ldt:
     .rept 4
     .quad 0
@@ -106,8 +123,7 @@ _idt:
     .endr
 
 idt_bottom:
+# --------------
 
 
-gdt_desc:
-    .word gdt_bottom-gdt-1
-    .long gdt
+

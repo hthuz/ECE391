@@ -37,8 +37,8 @@ void pit_handler()
 {
   cli();
   // printf("a");
-  int freq = pit_read_freq();
-  printf("%d\n",freq);
+  // int freq = pit_read_freq();
+  // printf("%d\n",freq);
   sti();
   send_eoi(PIT_IRQ);
 
