@@ -28,7 +28,8 @@ continue:
     lgdt    gdt_desc
     # lidt    idt_desc_ptr
     lidt    idt_desc_ptr
-    # Load CS with the new descriptor value
+    # Load CS with the new descriptor1 value
+    # Long Jump, use KERNEL_CS for CS register and keep_going for EIP register
     ljmp    $KERNEL_CS, $keep_going
 
 keep_going:

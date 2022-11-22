@@ -61,24 +61,40 @@ int pit_read_freq()
 
 void pit_handler()
 {
-  cli();
-  task_switch();
-  sti();
   send_eoi(PIT_IRQ);
-
+  task_switch();
+  return;
 }
 
 void task_switch()
 {
   set_running_pid();
+  pcb_t* running_pcb = get_pcb(running_pid);
+
+  register uint32_t saved_esp asm ("esp");
+  register uint32_t saved_ebp asm ("ebp");
+  
+  running_pcb->saved_ebp = saved_ebp;
+  running_pcb->saved_esp = saved_esp;
 
   // Context Switch
   tss.ss0 = KERNEL_DS;
   tss.esp0 = K_BASE - (running_pid) * K_TASK_STACK_SIZE - sizeof(int32_t);
   set_process_paging(running_pid);
 
+  uint32_t esp = running_pcb->saved_esp;
+  uint32_t ebp = running_pcb->saved_ebp;
 
+  asm volatile(
+      "movl %%ebx, %%ebp    ;"
+      "movl %%ecx, %%esp    ;"
+      "leave;"
+      "ret;"
+      :
+      : "c"(esp), "b"(ebp)
+      : "ebp","esp");
 
+  return;
 }
 
 void set_running_pid()
@@ -99,5 +115,6 @@ void set_running_pid()
       break;
     }
   }
+  return;
 
 }
