@@ -33,6 +33,7 @@
 #define CASE_FILE 2
 #define CASE_DIR 1
 // #define CASE_TERMINAL 3
+
 extern int32_t cur_pid;
 extern int running_tasks[MAX_TASK_NUM];
 extern int task_num;

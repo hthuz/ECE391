@@ -9,9 +9,6 @@
 #include "syscall.h"
 #include "terminal.h"
 
-// Current Termianl that scheduling is running
-// Note difference with cur_tid;
-int32_t running_tid = 0;
 // Number of terminals executed in one round
 int32_t term_num_oneround = 1;
 /*
@@ -70,6 +67,11 @@ void pit_handler()
 
 void task_switch()
 {
+
+  // if only one terminal, no need to switch
+  if(term_num == 1)
+    return;
+
   termin_t* running_term;
   termin_t* next_term;
   int32_t next_pid;
@@ -77,9 +79,6 @@ void task_switch()
   pcb_t* next_pcb;
 
   running_term = get_terminal(running_tid);
-  cur_pid =  running_term->pid_list[running_term->pid_num - 1];
-  cur_pcb = get_pcb(cur_pid);
-
   set_running_terminal();
 
   next_term = get_terminal(running_tid);
@@ -93,7 +92,13 @@ void task_switch()
   cur_pcb->saved_ebp = saved_ebp;
   cur_pcb->saved_esp = saved_esp;
 
+  if(running_tid == cur_tid)
+  {
+    
+  }
 
+
+  // Context switch
   tss.ss0 = KERNEL_DS;
   tss.esp0 = K_BASE - next_pid * K_TASK_STACK_SIZE - sizeof(int32_t);
   set_process_paging(next_pid);

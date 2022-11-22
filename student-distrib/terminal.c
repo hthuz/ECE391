@@ -9,11 +9,13 @@
 #include "keyboard.h"
 
 // Current Terminal that user is on
-// Note difference with running_tid
-int32_t cur_tid = 0;
+int32_t cur_tid;
+// CUrrent Termianl that scheduling is running
+int32_t running_tid;
 
-int term_switch_flag = 0;
-int32_t term_num = 1;
+int term_switch_flag;
+int32_t term_num;
+
 termin_t terminals[MAX_TERM_NUM];
 
 /* terminal_open
@@ -167,10 +169,19 @@ void terminal_init()
     for(i = 0; i < MAX_TASK_NUM; i++)
       terminals[tid].pid_list[i] = NO_PID;
     terminals[tid].pid_num = 0;
+    terminals[tid].pid = NO_PID;
   }    
 
   // Terminal 0 is invoked 
   terminals[0].invoked = 1;
+
+
+  // Initialize global variables
+  cur_tid = 0;
+  running_tid = 0;
+  term_num = 0;
+  term_switch_flag = 0;
+
 }
 
 /*
@@ -219,7 +230,6 @@ void terminal_switch(int32_t new_tid)
   screen_y = new_term->screen_y;
   update_cursor(screen_x,screen_y);
 
-  cur_pid = new_term->pid;
   cur_tid = new_tid;
 
   // Start new shell if it's not invoked

@@ -27,6 +27,7 @@ struct termin_t
   int screen_y;
   unsigned char kb_buf[KB_BUF_SIZE];
   int kb_buf_length;
+  int32_t pid;
   int32_t pid_list[MAX_TASK_NUM];  // Process that currently runs on this terminal 
   int32_t pid_num;  // Number of tasks on this terminal
 };
@@ -35,9 +36,12 @@ typedef struct termin_t termin_t;
 
 
 extern int32_t cur_tid;
+extern int32_t running_tid;
+
 extern int term_switch_flag;
 extern int32_t term_num;
 extern termin_t terminals[MAX_TERM_NUM];
+
 
 
 
