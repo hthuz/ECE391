@@ -180,9 +180,6 @@ void entry(unsigned long magic, unsigned long addr) {
     /* Execute the first program ("shell") ... */
 	optable_init();	
 	printf("TERMINAL #%d\n",cur_tid);
-    // Shell 0 always has pid 0
-    termin_t* term_0 = get_terminal(cur_tid);
-    term_0->pid = 0;
 	execute((uint8_t*)"shell");
 
     /* Spin (nicely, so we don't chew up cycles) */

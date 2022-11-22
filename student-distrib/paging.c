@@ -84,6 +84,7 @@ char paging_init()
                                                                         // the address is multiple of 4k
                                                                         // so lower 12 bits not required
   p_table[PTE_INDEX(VID_MEM_START)].present = 1;
+  printf("%d\n",PTE_INDEX(VID_MEM_START));
 
   // paging for kernel memory
   // using 4MB paging

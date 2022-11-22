@@ -48,6 +48,8 @@ int32_t halt(uint8_t status)
 {
   int i;
   pcb_t *cur_pcb = get_pcb(cur_pid);
+  termin_t* term = get_terminal(cur_pcb->tid);
+
   // Restore parent data
   // if it is the original shell
   if(cur_pcb->parent_pid == -1)
@@ -62,6 +64,9 @@ int32_t halt(uint8_t status)
   // Note now cur_pid has become parent_pid
   // But cur_pcb doesn't change
   free_pid(cur_pid);
+  term->pid_num--;
+  term->pid_list[term->pid_num] = NO_PID;
+
   cur_pid = cur_pcb->parent_pid;
 
   tss.ss0 = KERNEL_DS;
@@ -115,7 +120,7 @@ int32_t execute(const uint8_t *command)
   uint8_t usr_cmd[ARG_LEN];
   uint8_t usr_args[ARG_LEN];
   termin_t* cur_term = get_terminal(cur_tid);
-
+  cli();
 
   if(parse_args(command, usr_cmd, usr_args) == -1)
     return -1;
@@ -131,19 +136,21 @@ int32_t execute(const uint8_t *command)
   {
     parent_pid = ROOT_PID;
     cur_pid = new_pid;
-    cur_term->pid = cur_pid;
     term_switch_flag = 0;
   }
   else
   {
-    parent_pid = cur_pid;
+    parent_pid = cur_term->pid_list[cur_term->pid_num - 1];
     cur_pid = new_pid;
   }
+  cur_term->pid_list[cur_term->pid_num] = cur_pid;
+  cur_term->pid_num++;
 
   set_process_paging(cur_pid);
 
   pcb = create_pcb(cur_pid,parent_pid, usr_args);
 
+  sti();
   context_switch(usr_cmd);
 
   return 0;
@@ -608,6 +615,7 @@ pcb_t* create_pcb(int32_t pid, int32_t parent_pid,  uint8_t* usr_args)
   pcb->saved_esp = saved_esp;  // 0x7FFE48 for shell 0x7FFE70 for first program
   // printf("esp: %x, ebp: %x\n",saved_esp, saved_ebp);
 
+  pcb->tid = cur_tid;
   return pcb;
 }
 

@@ -8,9 +8,12 @@
 #include "paging.h"
 #include "keyboard.h"
 
-
+// Current Terminal that user is on
+// Note difference with running_tid
 int32_t cur_tid = 0;
+
 int term_switch_flag = 0;
+int32_t term_num = 1;
 termin_t terminals[MAX_TERM_NUM];
 
 /* terminal_open
@@ -160,6 +163,10 @@ void terminal_init()
     for(i = 0; i < KB_BUF_SIZE; i++)
       terminals[tid].kb_buf[i] = '\0';
     terminals[tid].kb_buf_length = 0;
+
+    for(i = 0; i < MAX_TASK_NUM; i++)
+      terminals[tid].pid_list[i] = NO_PID;
+    terminals[tid].pid_num = 0;
   }    
 
   // Terminal 0 is invoked 
@@ -219,6 +226,7 @@ void terminal_switch(int32_t new_tid)
   if(new_term->invoked == 0)
   {
     new_term->invoked = 1;
+    term_num++;
     printf("TERMINAL #%d\n",cur_tid);
     term_switch_flag = 1;
     execute((uint8_t *)"shell");

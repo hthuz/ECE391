@@ -9,6 +9,7 @@
 
 // All three base shells share the same parent_pid ROOT
 #define ROOT_PID -1; 
+#define NO_PID -2;
 
 #define SYSCALL_FAIL -1;
 // A header occupies first 40 bytes that gives information about load and starting
@@ -63,6 +64,7 @@ typedef struct pcb_t
   uint32_t saved_ebp;
   uint8_t args[ARG_LEN];
   uint32_t use_vid;
+  int32_t tid;  // Which termial this process runs in
 } pcb_t;
 
 void show_task();
