@@ -10,7 +10,6 @@
 #include "terminal.h"
 
 // Number of terminals executed in one round
-int32_t term_num_oneround = 1;
 /*
  * pit_init
  *   DESCRIPTION: enable PIT IRQ and set frequency to PIT_FREQ
@@ -71,7 +70,7 @@ void task_switch()
   // if only one terminal, no need to switch
   if(term_num == 1)
     return;
-
+  cli();
   termin_t* running_term;
   termin_t* next_term;
   int32_t next_pid;
@@ -79,64 +78,59 @@ void task_switch()
   pcb_t* next_pcb;
 
   running_term = get_terminal(running_tid);
+  cur_pcb = get_pcb(running_term->pid);
+
+  // After this function, running_tid is changed
   set_running_terminal();
 
   next_term = get_terminal(running_tid);
-  next_pid = running_term->pid_list[running_term->pid_num - 1];
+  next_pid = next_term->pid;
   next_pcb = get_pcb(next_pid);
 
+  // If running termianl is current terminal, show it
+  if (running_tid == cur_tid)
+    set_vidmap_paging();
+  else
+    hide_term_vid_paging(running_tid);
+
+  set_process_paging(next_pid);
+
+  tss.ss0 = KERNEL_DS;
+  tss.esp0 = K_BASE  - next_pid * K_TASK_STACK_SIZE - sizeof(int32_t);
+
+  cur_pid = next_pid;
 
   // Store cur_pid's EBP,ESP
   register uint32_t saved_ebp asm("ebp");
-  register uint32_t saved_esp asm("esp");
+  register uint32_t saved_esp asm("esp"); 
   cur_pcb->saved_ebp = saved_ebp;
   cur_pcb->saved_esp = saved_esp;
 
-  if(running_tid == cur_tid)
-  {
-    
-  }
-
-
   // Context switch
-  tss.ss0 = KERNEL_DS;
-  tss.esp0 = K_BASE - next_pid * K_TASK_STACK_SIZE - sizeof(int32_t);
-  set_process_paging(next_pid);
   // Use next task's EBP,ESP
   uint32_t ebp = next_pcb->saved_ebp;
   uint32_t esp = next_pcb->saved_esp;
-  asm volatile(
-      "movl %%ebx, %%ebp;"
-      "movl %%ecx, %%esp;"
-      "leave;"
-      "ret;"
-      :
-      :"b"(ebp),"c"(esp)
-      :"ebp","esp"
-      );
+    asm volatile(
+        "movl %0, %%esp;"
+        "movl %1, %%ebp;"
+        :
+        :"r"(esp), "r"(ebp)
+    );
 
-  return;
+  sti();
+
 }
 
 void set_running_terminal()
 {
   int i;
-  if(term_num_oneround == term_num)
-  {
-    term_num_oneround = 1;
-    running_tid = 0;
-    return;
-  }
 
-  for(i = 0; i < MAX_TASK_NUM; i++)
+  for(i = 0 ; i < MAX_TERM_NUM; i++)
   {
-    if (terminals[i].invoked == 1 && i > running_tid)
-    {
-      running_tid = i;
-      term_num_oneround++;
+    running_tid++;
+    running_tid = running_tid % MAX_TERM_NUM;
+    if(terminals[running_tid].invoked == 1)
       break;
-    }
   }
-  return;
 
 }

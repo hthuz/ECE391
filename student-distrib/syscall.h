@@ -88,6 +88,7 @@ void set_process_paging(int32_t pid);
 // Set up paging for a process's vidmap
 void set_vidmap_paging();
 
+void hide_term_vid_paging(int32_t tid);
 // reSet paging for a process's vidmap
 void reset_vidmap_paging();
 

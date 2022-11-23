@@ -46,6 +46,7 @@ void show_task()
  */
 int32_t halt(uint8_t status)
 {
+  cli();
   int i;
   pcb_t *cur_pcb = get_pcb(cur_pid);
   termin_t* running_term = get_terminal(running_tid);
@@ -101,6 +102,7 @@ int32_t halt(uint8_t status)
       :
       : "c"(my_esp), "b"(my_ebp), "d"(result)
       : "eax", "ebp", "esp");
+  sti();
   return 0;
 }
 
@@ -417,6 +419,28 @@ void set_vidmap_paging()
       : "%eax");
 }
 
+void hide_term_vid_paging(int32_t tid)
+{
+  int index = PDE_INDEX(35 * P_4M_SIZE);
+  
+  // 140MB is the virtual space address of memory
+  p_dir[index].present = 1;
+  p_dir[index].page_size = 0;
+  p_dir[index].u_su = 1;
+  p_dir[index].base_addr = (((int)video_p_table) >> 12);
+
+  video_p_table[0].base_addr = TERM_VID_ADDR(tid) >> 12; // page is 4k aligned,
+                                                    // the address is multiple of 4k
+                                                    // so lower 12 bits not required
+  video_p_table[0].present = 1;
+  // flush TLB
+  asm volatile(
+      "movl %%cr3, %%eax;"
+      "movl %%eax, %%cr3;"
+      :
+      :
+      : "%eax");
+}
 /*
  * reset_vidmap_paging
  *   DESCRIPTIOIN: reset vidmap paging for program

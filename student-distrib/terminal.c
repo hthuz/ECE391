@@ -210,9 +210,12 @@ termin_t* get_terminal(int32_t tid)
  */
 void terminal_switch(int32_t new_tid)
 {
+
   // If Switch to the same terminal, do nothing
   if(cur_tid == new_tid)
     return;
+  cli();
+  pcb_t* cur_pcb = get_pcb(cur_pid);
   termin_t* cur_term = get_terminal(cur_tid);
   termin_t* new_term = get_terminal(new_tid);
   // Save current used terminal video memory
@@ -237,10 +240,20 @@ void terminal_switch(int32_t new_tid)
   {
     new_term->invoked = 1;
     term_num++;
-    printf("TERMINAL #%d\n",cur_tid);
     term_switch_flag = 1;
+
+
+    asm volatile(
+      "movl %%ebp, %0;"
+      "movl %%esp, %1"
+      :"=r"(cur_pcb->saved_ebp), "=r"(cur_pcb->saved_esp)
+    );
+    cur_pid = ROOT_PID; // Not Necessary
+    printf("TERMINAL #%d\n",cur_tid);
+    sti();
     execute((uint8_t *)"shell");
   }
+  sti();
 }
 
 
