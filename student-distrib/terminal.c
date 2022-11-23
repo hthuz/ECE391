@@ -124,14 +124,18 @@ int32_t terminal_write(int32_t fd, const void *buf, int32_t nbytes)
     int i;
     char *charbuf = (char *)buf;
 
+  if(cur_tid == running_tid)
+  {
     for (i = 0; i < nbytes; i++)
-    {
-      if(cur_tid == running_tid)
-        putc(charbuf[i]);
-      else
-        terminal_putc(charbuf[i],cur_tid);
-    }
-    sti();
+      putc(charbuf[i]);
+  }
+  else
+  {
+    for (i = 0; i < nbytes; i++)
+      terminal_putc(charbuf[i],cur_tid);
+  }
+
+  sti();
     return nbytes;
 }
 
