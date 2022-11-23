@@ -18,7 +18,9 @@ pit_linkage:
 
 keyboard_linkage:
     pushal
+    pushfl
     call keyboard_handler
+    popfl
     popal
     iret
     
@@ -32,7 +34,7 @@ rtc_linkage:
 
 sys_call_linkage:
   # Arguments
-  cli;
+  cli
   pushl %ebp
   pushl %edi
   pushl %esi
@@ -56,7 +58,7 @@ sys_call_linkage:
   popl %esi
   popl %edi
   popl %ebp
-  sti;
+  sti
 
   iret
 

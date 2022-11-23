@@ -155,7 +155,7 @@ typedef union idt_desc_t {
         uint32_t reserved2 : 1;
         uint32_t reserved1 : 1;
         uint32_t size      : 1;
-        uint32_t reserved0 : 1;
+        uint32_t reserved0 : 1; // reserved 3,2,1,0 are related with trap gate/interrupt gate
         uint32_t dpl       : 2;
         uint32_t present   : 1;
         uint16_t offset_31_16;

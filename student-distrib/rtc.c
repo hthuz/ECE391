@@ -29,15 +29,12 @@ rtc_table_t rtcjumptable;
 int rtc_init()
 {
     interrupt = 0;
-    cli();
     char previ;
     outb(RTCB, RTC_PORT);
     previ = inb(RTC_DATA);
     outb(RTCB, RTC_PORT);
     outb(previ | 0x40, RTC_DATA);
     enable_irq(IRQ8);
-    // rtc_set_rate(MIN_FREQUENCE);
-    sti();
     return 0;
 }
 

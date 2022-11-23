@@ -168,7 +168,6 @@ void entry(unsigned long magic, unsigned long addr) {
 	// Initialize terminal
 	terminal_init();
 	
-
 	// Enalbe interrupt
     sti();
 

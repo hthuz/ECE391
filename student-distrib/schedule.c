@@ -20,7 +20,6 @@
  */
 void pit_init()
 {
-  cli();
   int divider = PIT_OSCI_FREQ / PIT_FREQ;
 
   // Set frequency to PIT_FREQ
@@ -28,8 +27,6 @@ void pit_init()
   outb( (divider & 0xFF), PIT_CH0_PORT); 
   // send high byte
   outb( (divider & 0xFF00) >> 8, PIT_CH0_PORT );
-
-  sti();
 
   enable_irq(PIT_IRQ);
 }
@@ -70,16 +67,15 @@ void task_switch()
   // if only one terminal, no need to switch
   if(term_num == 1)
     return;
-  cli();
-  termin_t* curr_term;
+  termin_t* curr_running_term;
   termin_t* next_term;
   int32_t next_pid;
   pcb_t* cur_pcb;
   pcb_t* next_pcb;
 
 
-  curr_term = get_terminal(running_tid);
-  cur_pcb = get_pcb(curr_term->pid);
+  curr_running_term = get_terminal(running_tid);
+  cur_pcb = get_pcb(curr_running_term->pid);
 
   // printf("%x ", *pcb0_ebp);
   // After this function, running_tid is changed
@@ -89,11 +85,11 @@ void task_switch()
   next_pid = next_term->pid;
   next_pcb = get_pcb(next_pid);
 
-  // If running termianl is current terminal, show it
-  if (running_tid == cur_tid)
-    set_vidmap_paging();
-  else
-    hide_term_vid_paging(running_tid);
+  // // If running termianl is current terminal, show it
+  // if (running_tid == cur_tid)
+  //   set_vidmap_paging();
+  // else
+  //   hide_term_vid_paging(running_tid);
 
   set_process_paging(next_pid);
 
@@ -130,7 +126,6 @@ void task_switch()
         :"r"(esp), "r"(ebp)
     );
 
-  sti();
 
 }
 

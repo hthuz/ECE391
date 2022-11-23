@@ -3,11 +3,13 @@
 
 #include "x86_desc.h"
 
-// magic numbers
-#define PIT_PORT 0x20
-#define keyboard_port  0x21
-#define rtc_port  0x28
-#define sys_call_port  0x80
+
+#define PIT_VEC 0x20
+#define KEYBOARD_VEC  0x21
+#define RTC_VEC  0x28
+#define SYS_CALL_VEC  0x80
+
+void idt_exception_init();
 
 
 extern void idt_fill(); //used to initilize idt
