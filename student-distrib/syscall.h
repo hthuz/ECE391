@@ -9,6 +9,7 @@
 
 // All three base shells share the same parent_pid ROOT
 #define ROOT_PID -1; 
+#define NO_PID -2;
 
 #define SYSCALL_FAIL -1;
 // A header occupies first 40 bytes that gives information about load and starting
@@ -32,6 +33,11 @@
 #define CASE_FILE 2
 #define CASE_DIR 1
 // #define CASE_TERMINAL 3
+
+extern int32_t cur_pid;
+extern int running_tasks[MAX_TASK_NUM];
+extern int task_num;
+extern uint32_t* pcb0_ebp;
 
 typedef struct optable_t
 {
@@ -60,8 +66,10 @@ typedef struct pcb_t
   uint32_t saved_ebp;
   uint8_t args[ARG_LEN];
   uint32_t use_vid;
+  int32_t tid;  // Which termial this process runs in
 } pcb_t;
 
+void show_task();
 // System call functions
 int32_t halt(uint8_t status);
 int32_t execute(const uint8_t *command);
@@ -81,6 +89,7 @@ void set_process_paging(int32_t pid);
 // Set up paging for a process's vidmap
 void set_vidmap_paging();
 
+void hide_term_vid_paging(int32_t tid);
 // reSet paging for a process's vidmap
 void reset_vidmap_paging();
 

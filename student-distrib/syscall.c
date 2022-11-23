@@ -10,6 +10,8 @@
 
 #define SYSCALL_FAIL -1;
 
+uint32_t* pcb0_ebp;
+
 // Initially, there is no process, denote as -1
 int32_t cur_pid = ROOT_PID;
 
@@ -26,6 +28,15 @@ optable_t rtc_optable;
 optable_t file_optable;
 optable_t dir_optable;
 
+
+void show_task()
+{
+  int i;
+  for(i = 0; i < 6; i++)
+    printf("%d ",running_tasks[i]);
+  printf("\n");
+}
+
 /*
  * halt
  *   DESCRIPTION: halt a program, if it is the process 0 shell,
@@ -37,8 +48,11 @@ optable_t dir_optable;
  */
 int32_t halt(uint8_t status)
 {
+  cli();
   int i;
   pcb_t *cur_pcb = get_pcb(cur_pid);
+  termin_t* running_term = get_terminal(running_tid);
+
   // Restore parent data
   // if it is the original shell
   if(cur_pcb->parent_pid == -1)
@@ -51,7 +65,9 @@ int32_t halt(uint8_t status)
   }
 
   // Note now cur_pid has become parent_pid
+  // But cur_pcb doesn't change
   free_pid(cur_pid);
+
   cur_pid = cur_pcb->parent_pid;
 
   tss.ss0 = KERNEL_DS;
@@ -70,6 +86,11 @@ int32_t halt(uint8_t status)
     cur_pcb->use_vid = 0;
     reset_vidmap_paging();
   }
+
+  // Update terminal information
+  running_term->pid_num--;
+  running_term->pid = cur_pid;
+
   // Jump to execute return
   uint32_t my_esp = cur_pcb->saved_esp;
   uint32_t my_ebp = cur_pcb->saved_ebp;
@@ -83,6 +104,7 @@ int32_t halt(uint8_t status)
       :
       : "c"(my_esp), "b"(my_ebp), "d"(result)
       : "eax", "ebp", "esp");
+  sti();
   return 0;
 }
 
@@ -105,7 +127,7 @@ int32_t execute(const uint8_t *command)
   uint8_t usr_cmd[ARG_LEN];
   uint8_t usr_args[ARG_LEN];
   termin_t* cur_term = get_terminal(cur_tid);
-
+  cli();
 
   if(parse_args(command, usr_cmd, usr_args) == -1)
     return -1;
@@ -120,20 +142,27 @@ int32_t execute(const uint8_t *command)
   if(term_switch_flag == 1)
   {
     parent_pid = ROOT_PID;
-    cur_pid = new_pid;
-    cur_term->pid = cur_pid;
     term_switch_flag = 0;
   }
   else
   {
     parent_pid = cur_pid;
-    cur_pid = new_pid;
   }
+
+  // Change to new process
+  cur_pid = new_pid;
+
+  // Update the process running in current terminal
+  cur_term->pid = cur_pid;
+  cur_term->pid_num++;
+  running_tid = cur_tid;
 
   set_process_paging(cur_pid);
 
   pcb = create_pcb(cur_pid,parent_pid, usr_args);
 
+
+  sti();
   context_switch(usr_cmd);
 
   return 0;
@@ -392,6 +421,28 @@ void set_vidmap_paging()
       : "%eax");
 }
 
+void hide_term_vid_paging(int32_t tid)
+{
+  int index = PDE_INDEX(35 * P_4M_SIZE);
+  
+  // 140MB is the virtual space address of memory
+  p_dir[index].present = 1;
+  p_dir[index].page_size = 0;
+  p_dir[index].u_su = 1;
+  p_dir[index].base_addr = (((int)video_p_table) >> 12);
+
+  video_p_table[0].base_addr = TERM_VID_ADDR(tid) >> 12; // page is 4k aligned,
+                                                    // the address is multiple of 4k
+                                                    // so lower 12 bits not required
+  video_p_table[0].present = 1;
+  // flush TLB
+  asm volatile(
+      "movl %%cr3, %%eax;"
+      "movl %%eax, %%cr3;"
+      :
+      :
+      : "%eax");
+}
 /*
  * reset_vidmap_paging
  *   DESCRIPTIOIN: reset vidmap paging for program
@@ -577,8 +628,6 @@ pcb_t* create_pcb(int32_t pid, int32_t parent_pid,  uint8_t* usr_args)
   pcb->use_vid = 0;
 
   // Initialize File array
-  // flag 0: inactive
-  // flag 1: active
   for (i = 0; i < FARRAY_SIZE; i++)
   {
     pcb->farray[i].flags = 0;
@@ -594,9 +643,12 @@ pcb_t* create_pcb(int32_t pid, int32_t parent_pid,  uint8_t* usr_args)
   // Store EBP and ESP
   register uint32_t saved_ebp asm("ebp");
   register uint32_t saved_esp asm("esp");
-  pcb->saved_ebp = saved_ebp;
-  pcb->saved_esp = saved_esp;
+  pcb->saved_ebp = saved_ebp;  // 0x7FFE60 for shell 0x7FFE98 for first program
+  pcb->saved_esp = saved_esp;  // 0x7FFE48 for shell 0x7FFE70 for first program
 
+  pcb0_ebp = &(get_pcb(0)->saved_ebp);
+
+  pcb->tid = cur_tid;
   return pcb;
 }
 
@@ -634,6 +686,7 @@ void context_switch(uint8_t* usr_cmd)
 
   tss.ss0 = KERNEL_DS;
   tss.esp0 = K_BASE - (cur_pid) * K_TASK_STACK_SIZE - sizeof(int32_t);
+
   // push iret context to kernel stack
   // reference: https://wiki.osdev.org/getting_to_ring_3
   asm volatile(

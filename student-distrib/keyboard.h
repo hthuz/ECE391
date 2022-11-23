@@ -21,6 +21,7 @@ int is_alphabet(unsigned char scancode);
 
 // used to scroll the screen by one line
 void scroll_one_line();
+void terminal_scroll_one_line(int32_t tid);
 
 // handle clean screen
 void handle_clear_screen();

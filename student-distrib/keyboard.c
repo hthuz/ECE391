@@ -296,10 +296,7 @@ int is_alphabet(unsigned char scancode)
  *   RETURN VALUE: 0 if scroll succeed
  * 				   -1 if fail
  *   SIDE EFFECT: Will change the content of video memory
- *
- *
  */
-
 void scroll_one_line()
 {
 	char *dest_mem;
@@ -318,6 +315,30 @@ void scroll_one_line()
 	// reset position on screen
 	screen_x = 0;
 	screen_y--; // reset screen_y to NUM_ROWS - 1 (24)
+	// update_cursor(screen_x,screen_y);
+
+	return;
+}
+
+void terminal_scroll_one_line(int32_t tid)
+{
+  termin_t* term = get_terminal(tid);
+	char *dest_mem;
+
+	// move memory starting frow second row to first row
+	dest_mem = memmove(term->video_mem, (char *)(TERM_VID_ADDR(tid) + (NUM_COLS << 1)), VIDEO_SIZE - (NUM_COLS << 1));
+
+	// set video memory of last row to empty
+	// TODO: probabilty keyboard buffer need to be cleaned as well?
+	int32_t i;
+	for (i = 0; i < NUM_COLS; i++)
+	{
+		*(uint8_t *)(term->video_mem + VIDEO_SIZE - (NUM_COLS << 1) + (i << 1)) = ' ';
+		*(uint8_t *)(term->video_mem + VIDEO_SIZE - (NUM_COLS << 1) + (i << 1) + 1) = ATTRIB;
+	}
+	// reset position on screen
+	term->screen_x = 0;
+	term->screen_y--; // reset screen_y to NUM_ROWS - 1 (24)
 	// update_cursor(screen_x,screen_y);
 
 	return;

@@ -16,6 +16,8 @@ void pit_init();
 void pit_handler();
 int pit_read_freq();
 
+void task_switch();
+void set_running_terminal();
 
 
 

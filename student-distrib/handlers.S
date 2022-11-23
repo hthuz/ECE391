@@ -10,7 +10,9 @@ sys_call_table:
 
 pit_linkage:
     pushal 
+    pushfl
     call pit_handler
+    popfl
     popal
     iret
 

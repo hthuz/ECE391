@@ -4,6 +4,7 @@
 
 #include "lib.h"
 #include "keyboard.h"
+#include "terminal.h"
 
 int screen_x;
 int screen_y;
@@ -251,6 +252,81 @@ void putc(uint8_t c)
         screen_x %= NUM_COLS;
         screen_y = (screen_y + (screen_x / NUM_COLS)) % NUM_ROWS;
 		update_cursor(screen_x,screen_y);
+    }
+}
+
+void terminal_putc(uint8_t c, int32_t tid)
+{
+  termin_t* term = get_terminal(tid);
+  int i;
+
+    switch (c)
+    {
+    case '\n':
+    case '\r':
+        term->screen_y++;
+        term->screen_x = 0;
+		if(term->screen_y == NUM_ROWS)
+		  terminal_scroll_one_line(tid);
+		// update_cursor(screen_x,screen_y);
+        break;
+
+    case '\b':
+        // backspace when at start of line
+        if (term->screen_x == 0 && term->screen_y != 0)
+        {
+            term->screen_x = NUM_COLS - 1;
+            term->screen_y--;
+            *(uint8_t *)(term->video_mem + ((NUM_COLS * term->screen_y + term->screen_x) << 1)) = ' ';
+            *(uint8_t *)(term->video_mem + ((NUM_COLS * term->screen_y + term->screen_x) << 1) + 1) = ATTRIB;
+        }
+        // normal backspace
+        else
+		{
+			if (term->screen_x != 0)
+			{
+			    term->screen_x--;
+				*(uint8_t *)(term->video_mem + ((NUM_COLS * term->screen_y + term->screen_x) << 1)) = ' ';
+			    *(uint8_t *)(term->video_mem + ((NUM_COLS * term->screen_y + term->screen_x) << 1) + 1) = ATTRIB;
+			}
+		}
+        // update_cursor(screen_x, screen_y);
+        break;
+
+    case '\t':
+        // for Tab, print four empty spaces
+        for (i = 0; i < 4; i++)
+        {
+            *(uint8_t *)(term->video_mem + ((NUM_COLS * term->screen_y + term->screen_x) << 1)) = ' ';
+            *(uint8_t *)(term->video_mem + ((NUM_COLS * term->screen_y + term->screen_x) << 1) + 1) = ATTRIB;
+            term->screen_x++;
+            // situation when tab at the end of line
+            if (term->screen_x == NUM_COLS)
+            {
+                term->screen_y++;
+                if (term->screen_y == NUM_ROWS)
+					terminal_scroll_one_line(tid);
+            }
+            term->screen_x %= NUM_COLS;
+            term->screen_y = (term->screen_y + (term->screen_x / NUM_COLS)) % NUM_ROWS;
+        }
+        // update_cursor(screen_x, screen_y);
+        break;
+
+    default:
+        *(uint8_t *)(term->video_mem + ((NUM_COLS * term->screen_y + term->screen_x) << 1)) = c;
+        *(uint8_t *)(term->video_mem + ((NUM_COLS * term->screen_y + term->screen_x) << 1) + 1) = ATTRIB;
+        term->screen_x++;
+        // if this line reaches end, automatic add new line
+        if (term->screen_x == NUM_COLS)
+        {
+            term->screen_y++;
+            if (term->screen_y == NUM_ROWS)
+				terminal_scroll_one_line(tid);
+        }
+        term->screen_x %= NUM_COLS;
+        term->screen_y = (screen_y + (screen_x / NUM_COLS)) % NUM_ROWS;
+		// update_cursor(screen_x,screen_y);
     }
 }
 

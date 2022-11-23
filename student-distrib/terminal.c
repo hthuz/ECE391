@@ -8,9 +8,14 @@
 #include "paging.h"
 #include "keyboard.h"
 
+// Current Terminal that user is on
+int32_t cur_tid;
+// CUrrent Termianl that scheduling is running
+int32_t running_tid;
 
-int32_t cur_tid = 0;
-int term_switch_flag = 0;
+int term_switch_flag;
+int32_t term_num;
+
 termin_t terminals[MAX_TERM_NUM];
 
 /* terminal_open
@@ -90,6 +95,10 @@ int32_t terminal_read(int32_t fd, void *buf, int32_t nbytes)
     cur_term->kb_buf_length = 0;
     enter_pressed = 0;
     sti();
+
+    if(0 == strncmp(charbuf, "ps\n",3))
+      show_task();
+
     return i ;
 }
 
@@ -115,9 +124,18 @@ int32_t terminal_write(int32_t fd, const void *buf, int32_t nbytes)
     int i;
     char *charbuf = (char *)buf;
 
+  if(cur_tid == running_tid)
+  {
     for (i = 0; i < nbytes; i++)
-        putc(charbuf[i]);
-    sti();
+      putc(charbuf[i]);
+  }
+  else
+  {
+    for (i = 0; i < nbytes; i++)
+      terminal_putc(charbuf[i],cur_tid);
+  }
+
+  sti();
     return nbytes;
 }
 
@@ -148,6 +166,9 @@ void terminal_init()
     p_table[PTE_INDEX(vid_addr)].base_addr = vid_addr >> 12;
     p_table[PTE_INDEX(vid_addr)].present = 1;
 
+    // Clear Video Memory
+    memset((void *)vid_addr, 0,P_4K_SIZE);
+
     // Screen Position
     terminals[tid].screen_x = 0;
     terminals[tid].screen_y = 0;
@@ -156,10 +177,24 @@ void terminal_init()
     for(i = 0; i < KB_BUF_SIZE; i++)
       terminals[tid].kb_buf[i] = '\0';
     terminals[tid].kb_buf_length = 0;
+
+    for(i = 0; i < MAX_TASK_NUM; i++)
+      terminals[tid].pid_list[i] = NO_PID;
+    terminals[tid].pid_num = 0;
+    terminals[tid].pid = NO_PID;
   }    
+
 
   // Terminal 0 is invoked 
   terminals[0].invoked = 1;
+
+
+  // Initialize global variables
+  cur_tid = 0;
+  running_tid = 0;
+  term_num = 1;
+  term_switch_flag = 0;
+
 }
 
 /*
@@ -188,9 +223,12 @@ termin_t* get_terminal(int32_t tid)
  */
 void terminal_switch(int32_t new_tid)
 {
+
   // If Switch to the same terminal, do nothing
   if(cur_tid == new_tid)
     return;
+  cli();
+  pcb_t* cur_pcb = get_pcb(cur_pid);
   termin_t* cur_term = get_terminal(cur_tid);
   termin_t* new_term = get_terminal(new_tid);
   // Save current used terminal video memory
@@ -214,11 +252,23 @@ void terminal_switch(int32_t new_tid)
   if(new_term->invoked == 0)
   {
     new_term->invoked = 1;
-    printf("TERMINAL #%d\n",cur_tid);
+    term_num++;
     term_switch_flag = 1;
+
+
+    asm volatile(
+      "movl %%ebp, %0;"
+      "movl %%esp, %1"
+      :"=r"(cur_pcb->saved_ebp), "=r"(cur_pcb->saved_esp)
+    );
+    cur_pid = ROOT_PID; // Not Necessary
+    printf("TERMINAL #%d\n",cur_tid);
+    sti();
     execute((uint8_t *)"shell");
   }
+  sti();
 }
+
 
 
 
