@@ -179,7 +179,7 @@ void terminal_init()
   // Initialize global variables
   cur_tid = 0;
   running_tid = 0;
-  term_num = 0;
+  term_num = 1;
   term_switch_flag = 0;
 
 }
