@@ -37,6 +37,7 @@
 extern int32_t cur_pid;
 extern int running_tasks[MAX_TASK_NUM];
 extern int task_num;
+extern uint32_t* pcb0_ebp;
 
 typedef struct optable_t
 {

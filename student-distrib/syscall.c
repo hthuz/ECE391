@@ -10,6 +10,8 @@
 
 #define SYSCALL_FAIL -1;
 
+uint32_t* pcb0_ebp;
+
 // Initially, there is no process, denote as -1
 int32_t cur_pid = ROOT_PID;
 
@@ -643,6 +645,8 @@ pcb_t* create_pcb(int32_t pid, int32_t parent_pid,  uint8_t* usr_args)
   register uint32_t saved_esp asm("esp");
   pcb->saved_ebp = saved_ebp;  // 0x7FFE60 for shell 0x7FFE98 for first program
   pcb->saved_esp = saved_esp;  // 0x7FFE48 for shell 0x7FFE70 for first program
+
+  pcb0_ebp = &(get_pcb(0)->saved_ebp);
 
   pcb->tid = cur_tid;
   return pcb;

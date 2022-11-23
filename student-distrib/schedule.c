@@ -71,15 +71,17 @@ void task_switch()
   if(term_num == 1)
     return;
   cli();
-  termin_t* running_term;
+  termin_t* curr_term;
   termin_t* next_term;
   int32_t next_pid;
   pcb_t* cur_pcb;
   pcb_t* next_pcb;
 
-  running_term = get_terminal(running_tid);
-  cur_pcb = get_pcb(running_term->pid);
 
+  curr_term = get_terminal(running_tid);
+  cur_pcb = get_pcb(curr_term->pid);
+
+  // printf("%x ", *pcb0_ebp);
   // After this function, running_tid is changed
   set_running_terminal();
 
@@ -101,8 +103,19 @@ void task_switch()
   cur_pid = next_pid;
 
   // Store cur_pid's EBP,ESP
-  register uint32_t saved_ebp asm("ebp");
-  register uint32_t saved_esp asm("esp"); 
+  // register uint32_t saved_ebp asm("ebp");
+  // register uint32_t saved_esp asm("esp"); 
+  // cur_pcb->saved_ebp = saved_ebp;
+  // cur_pcb->saved_esp = saved_esp;
+
+
+  uint32_t saved_ebp, saved_esp;
+  asm volatile(
+    "movl %%esp, %0;"
+    "movl %%ebp, %1;"
+    :"=r"(saved_esp), "=r"(saved_ebp)
+    :
+  );
   cur_pcb->saved_ebp = saved_ebp;
   cur_pcb->saved_esp = saved_esp;
 
