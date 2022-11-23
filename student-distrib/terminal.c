@@ -125,7 +125,12 @@ int32_t terminal_write(int32_t fd, const void *buf, int32_t nbytes)
     char *charbuf = (char *)buf;
 
     for (i = 0; i < nbytes; i++)
+    {
+      if(cur_tid == running_tid)
         putc(charbuf[i]);
+      else
+        terminal_putc(charbuf[i],cur_tid);
+    }
     sti();
     return nbytes;
 }
@@ -157,6 +162,9 @@ void terminal_init()
     p_table[PTE_INDEX(vid_addr)].base_addr = vid_addr >> 12;
     p_table[PTE_INDEX(vid_addr)].present = 1;
 
+    // Clear Video Memory
+    memset((void *)vid_addr, 0,P_4K_SIZE);
+
     // Screen Position
     terminals[tid].screen_x = 0;
     terminals[tid].screen_y = 0;
@@ -171,6 +179,7 @@ void terminal_init()
     terminals[tid].pid_num = 0;
     terminals[tid].pid = NO_PID;
   }    
+
 
   // Terminal 0 is invoked 
   terminals[0].invoked = 1;
