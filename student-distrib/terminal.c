@@ -255,9 +255,11 @@ void terminal_switch(int32_t new_tid)
   // Start new shell if it's not invoked
   if(new_term->invoked == 0)
   {
+    printf("start new shell");
     new_term->invoked = 1;
     term_num++;
     term_switch_flag = 1;
+    term1_pid = &(terminals[1].pid);
 
     asm volatile(
       "movl %%ebp, %0;"

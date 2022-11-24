@@ -11,6 +11,7 @@
 #define SYSCALL_FAIL -1;
 
 uint32_t* pcb0_ebp;
+int32_t* term1_pid;
 int halted = 0;
 
 // Initially, there is no process, denote as -1

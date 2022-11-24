@@ -88,6 +88,7 @@ void task_switch()
 
   next_term = get_terminal(running_tid);
   next_pid = next_term->pid;
+  printf("%d",*term1_pid);
   next_pcb = get_pcb(next_pid);
 
   // // If running termianl is current terminal, show it
@@ -102,6 +103,7 @@ void task_switch()
   tss.esp0 = K_BASE  - next_pid * K_TASK_STACK_SIZE - sizeof(int32_t);
 
   cur_pid = next_pid;
+
 
   // Store cur_pid's EBP,ESP
   // register uint32_t saved_ebp asm("ebp");
