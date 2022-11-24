@@ -27,6 +27,7 @@ struct termin_t
   int screen_y;
   unsigned char kb_buf[KB_BUF_SIZE];
   int kb_buf_length;
+  int enter_pressed;
   int32_t pid;
   int32_t pid_list[MAX_TASK_NUM];  // Process that currently runs on this terminal 
   int32_t pid_num;  // Number of tasks on this terminal

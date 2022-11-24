@@ -9,7 +9,9 @@
 #define PIT_CH0_PORT 0x40
 #define PIT_CMD_PORT 0x43
 #define PIT_OSCI_FREQ 1193182
-#define PIT_FREQ 100
+// #define PIT_FREQ 100
+#define PIT_MAX_FREQ 1193180
+#define PIT_FREQ (PIT_MAX_FREQ / 20)
 
 
 void pit_init();

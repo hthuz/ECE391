@@ -70,5 +70,6 @@ syscall_error:
   popl %esi
   popl %edi
   popl %ebp
+  sti
   iret
 

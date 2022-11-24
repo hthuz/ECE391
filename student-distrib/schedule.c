@@ -23,10 +23,14 @@ void pit_init()
   int divider = PIT_OSCI_FREQ / PIT_FREQ;
 
   // Set frequency to PIT_FREQ
+  outb( 0x36,PIT_CMD_PORT);
   // send low byte
-  outb( (divider & 0xFF), PIT_CH0_PORT); 
-  // send high byte
-  outb( (divider & 0xFF00) >> 8, PIT_CH0_PORT );
+  // outb( (divider & 0xFF), PIT_CH0_PORT); 
+  // // send high byte
+  // outb( (divider & 0xFF00) >> 8, PIT_CH0_PORT );
+
+  outb(0xff & PIT_FREQ,PIT_CH0_PORT);
+  outb(PIT_FREQ >> 8, PIT_CH0_PORT);
 
   enable_irq(PIT_IRQ);
 }
@@ -67,6 +71,7 @@ void task_switch()
   // if only one terminal, no need to switch
   if(term_num == 1)
     return;
+  cli();
   termin_t* curr_running_term;
   termin_t* next_term;
   int32_t next_pid;
@@ -87,7 +92,7 @@ void task_switch()
 
   // // If running termianl is current terminal, show it
   // if (running_tid == cur_tid)
-  //   set_vidmap_paging();
+  //   set_vidmap_paging(W);
   // else
   //   hide_term_vid_paging(running_tid);
 
@@ -125,6 +130,7 @@ void task_switch()
         :
         :"r"(esp), "r"(ebp)
     );
+  sti();
 
 
 }

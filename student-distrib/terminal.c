@@ -61,15 +61,17 @@ int32_t terminal_read(int32_t fd, void *buf, int32_t nbytes)
 {
     if (buf == NULL)
         return SYSCALL_FAIL;
+    termin_t* running_term = get_terminal(running_tid);
         // do nothing until enter is pressed
-    while (enter_pressed == 0);
-
+ 
+    while (running_term->enter_pressed == 0);
+    // printf("%d",running_tid);
     cli();
     int i;
     int j;
     char* charbuf = buf;
-    termin_t* cur_term = get_terminal(cur_tid);
-    if (nbytes < cur_term->kb_buf_length + 1)
+    // termin_t* cur_term = get_terminal(cur_tid);
+    if (nbytes < running_term->kb_buf_length + 1)
         return SYSCALL_FAIL;
 
     // empty buf first
@@ -78,22 +80,22 @@ int32_t terminal_read(int32_t fd, void *buf, int32_t nbytes)
 
     // Copy kb_buf to dest buf
     // After loop, i becomes kb_buf_length
-    for(i = 0; i < cur_term->kb_buf_length; i++)
-        charbuf[i] = cur_term->kb_buf[i];
+    for(i = 0; i < running_term->kb_buf_length; i++)
+        charbuf[i] = running_term->kb_buf[i];
 
     // If kb_buf is full without /n, add one to termianl buf
     // i.e. there should always be \n at the end of terminal buf
-    if(cur_term->kb_buf_length == KB_BUF_SIZE && cur_term->kb_buf[KB_BUF_SIZE - 1] != '\n')
+    if(running_term->kb_buf_length == KB_BUF_SIZE && running_term->kb_buf[KB_BUF_SIZE - 1] != '\n')
     {
         charbuf[i] = '\n';
         i++;
     }
 
     // Clean kb_buf
-    for(j = 0; j < cur_term->kb_buf_length; j++)
-        cur_term->kb_buf[j] = '\0';
-    cur_term->kb_buf_length = 0;
-    enter_pressed = 0;
+    for(j = 0; j < running_term->kb_buf_length; j++)
+        running_term->kb_buf[j] = '\0';
+    running_term->kb_buf_length = 0;
+    running_term->enter_pressed = 0;
     sti();
 
     if(0 == strncmp(charbuf, "ps\n",3))
@@ -124,6 +126,7 @@ int32_t terminal_write(int32_t fd, const void *buf, int32_t nbytes)
     int i;
     char *charbuf = (char *)buf;
 
+  // printf("%d",running_tid);
   if(cur_tid == running_tid)
   {
     for (i = 0; i < nbytes; i++)
@@ -132,7 +135,7 @@ int32_t terminal_write(int32_t fd, const void *buf, int32_t nbytes)
   else
   {
     for (i = 0; i < nbytes; i++)
-      terminal_putc(charbuf[i],cur_tid);
+      terminal_putc(charbuf[i],running_tid);
   }
 
   sti();
@@ -182,6 +185,7 @@ void terminal_init()
       terminals[tid].pid_list[i] = NO_PID;
     terminals[tid].pid_num = 0;
     terminals[tid].pid = NO_PID;
+    terminals[tid].enter_pressed = 0;
   }    
 
 

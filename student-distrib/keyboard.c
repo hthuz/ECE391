@@ -164,7 +164,7 @@ void keyboard_handler()
 	  cur_term->kb_buf_length++;
 		putc(result);
     if (result == '\n')
-        enter_pressed = 1;
+        cur_term->enter_pressed = 1;
     send_eoi(KEY_IRQ);
     return;
 	}
@@ -173,7 +173,7 @@ void keyboard_handler()
   if (cur_term->kb_buf_length == KB_BUF_SIZE && result == '\n')
   {
     putc(result);
-    enter_pressed = 1;
+    cur_term->enter_pressed = 1;
   }
 	send_eoi(KEY_IRQ);
 	return;
@@ -188,7 +188,7 @@ void keyboard_handler()
  */
 void handle_clear_screen()
 {
-  termin_t* cur_term = get_terminal(cur_tid);
+  	termin_t* cur_term = get_terminal(cur_tid);
 	clear();
 	update_cursor(0, 0);
 	memset(cur_term->kb_buf, '\0', KB_BUF_SIZE);

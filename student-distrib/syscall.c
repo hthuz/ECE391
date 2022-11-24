@@ -11,6 +11,7 @@
 #define SYSCALL_FAIL -1;
 
 uint32_t* pcb0_ebp;
+int halted = 0;
 
 // Initially, there is no process, denote as -1
 int32_t cur_pid = ROOT_PID;
@@ -49,9 +50,12 @@ void show_task()
 int32_t halt(uint8_t status)
 {
   cli();
+
   int i;
   pcb_t *cur_pcb = get_pcb(cur_pid);
+  pcb_t* parent_pcb = get_pcb(cur_pcb->parent_pid);
   termin_t* running_term = get_terminal(running_tid);
+
 
   // Restore parent data
   // if it is the original shell
@@ -69,6 +73,7 @@ int32_t halt(uint8_t status)
   free_pid(cur_pid);
 
   cur_pid = cur_pcb->parent_pid;
+
 
   tss.ss0 = KERNEL_DS;
   tss.esp0 = K_BASE - cur_pid * K_TASK_STACK_SIZE - sizeof(int32_t);
@@ -92,9 +97,10 @@ int32_t halt(uint8_t status)
   running_term->pid = cur_pid;
 
   // Jump to execute return
-  uint32_t my_esp = cur_pcb->saved_esp;
-  uint32_t my_ebp = cur_pcb->saved_ebp;
+  uint32_t my_esp = parent_pcb->saved_esp;
+  uint32_t my_ebp = parent_pcb->saved_ebp;
   uint32_t result = (uint32_t)status;
+  halted = 1;
   asm volatile(
       "movl %%ebx, %%ebp    ;"
       "movl %%ecx, %%esp    ;"
@@ -130,14 +136,26 @@ int32_t execute(const uint8_t *command)
   cli();
 
   if(parse_args(command, usr_cmd, usr_args) == -1)
+  {
+    sti();
     return -1;
+  }
+
 
   if(check_exec(usr_cmd) == -1)
+  {
+    sti();
     return -1;
+  }
+
 
   // record parentid and current id
   if(-1 == ( new_pid = create_pid() ))
+  {
+    sti();
     return -1;
+  }
+
    
   if(term_switch_flag == 1)
   {
@@ -161,8 +179,6 @@ int32_t execute(const uint8_t *command)
 
   pcb = create_pcb(cur_pid,parent_pid, usr_args);
 
-
-  sti();
   context_switch(usr_cmd);
 
   return 0;
@@ -643,10 +659,18 @@ pcb_t* create_pcb(int32_t pid, int32_t parent_pid,  uint8_t* usr_args)
   // Store EBP and ESP
   register uint32_t saved_ebp asm("ebp");
   register uint32_t saved_esp asm("esp");
-  pcb->saved_ebp = saved_ebp;  // 0x7FFE60 for shell 0x7FFE98 for first program
-  pcb->saved_esp = saved_esp;  // 0x7FFE48 for shell 0x7FFE70 for first program
+  if(parent_pid == -1)
+  {
+    pcb->saved_ebp = saved_ebp;  // 0x7FFE60 for shell 0x7FFE98 for first program
+    pcb->saved_esp = saved_esp;  // 0x7FFE48 for shell 0x7FFE70 for first program
+  }else
+  {
+    pcb_t* parent_pcb = get_pcb(pcb->parent_pid);
+    parent_pcb->saved_ebp = saved_ebp;
+    parent_pcb->saved_esp = saved_esp;
+  }
 
-  pcb0_ebp = &(get_pcb(0)->saved_ebp);
+
 
   pcb->tid = cur_tid;
   return pcb;
@@ -687,6 +711,7 @@ void context_switch(uint8_t* usr_cmd)
   tss.ss0 = KERNEL_DS;
   tss.esp0 = K_BASE - (cur_pid) * K_TASK_STACK_SIZE - sizeof(int32_t);
 
+  sti();
   // push iret context to kernel stack
   // reference: https://wiki.osdev.org/getting_to_ring_3
   asm volatile(
