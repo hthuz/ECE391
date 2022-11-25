@@ -37,8 +37,6 @@
 extern int32_t cur_pid;
 extern int running_tasks[MAX_TASK_NUM];
 extern int task_num;
-extern uint32_t* pcb0_ebp;
-extern int32_t* term1_pid;
 
 typedef struct optable_t
 {
@@ -54,7 +52,7 @@ typedef struct fentry_t
   optable_t *optable_ptr;
   int32_t inode;
   int32_t f_pos;
-  int32_t flags; // 0: inactive 1: active
+  int32_t flags;
 } fentry_t;
 
 // Process Control Block structure
@@ -67,10 +65,8 @@ typedef struct pcb_t
   uint32_t saved_ebp;
   uint8_t args[ARG_LEN];
   uint32_t use_vid;
-  int32_t tid;  // Which termial this process runs in
 } pcb_t;
 
-void show_task();
 // System call functions
 int32_t halt(uint8_t status);
 int32_t execute(const uint8_t *command);

@@ -22,15 +22,10 @@ void pit_init()
 {
   int divider = PIT_OSCI_FREQ / PIT_FREQ;
 
-  // Set frequency to PIT_FREQ
-  outb( 0x36,PIT_CMD_PORT);
   // send low byte
-  // outb( (divider & 0xFF), PIT_CH0_PORT); 
-  // // send high byte
-  // outb( (divider & 0xFF00) >> 8, PIT_CH0_PORT );
-
-  outb(0xff & PIT_FREQ,PIT_CH0_PORT);
-  outb(PIT_FREQ >> 8, PIT_CH0_PORT);
+  outb( (divider & 0xFF), PIT_CH0_PORT); 
+  // send high byte
+  outb( (divider & 0xFF00) >> 8, PIT_CH0_PORT );
 
   enable_irq(PIT_IRQ);
 }
@@ -44,7 +39,6 @@ void pit_init()
  *   SIDE EFFECTS: latch command is not sent
  *                 RESULT MAY NOT BE ACCURATE!
  */
-
 int pit_read_freq()
 {
   int freq;
@@ -58,6 +52,15 @@ int pit_read_freq()
 }
 
 
+/*
+ * pit_handler
+ *   DESCRIPTION: hander function for PIT, calls task_switch
+ *                every time an interrupt occurs
+ *   INPUTS: none
+ *   OUTPUTS: none
+ *   RETURN VALUE: none
+ *   SIDE EFFECTS: none
+ */
 void pit_handler()
 {
   send_eoi(PIT_IRQ);
@@ -65,12 +68,22 @@ void pit_handler()
   return;
 }
 
+/*
+ * task_switch
+ *   DESCRIPTION: shift to next active termianl and switch
+ *                to next task.
+ *   INPUTS: none
+ *   OUTPUTS: none
+ *   RETURN VALUE: none
+ *   SIDE_EFFECTS: will change the running task
+ */
 void task_switch()
 {
 
   // if only one terminal, no need to switch
   if(term_num == 1)
     return;
+
   cli();
   termin_t* curr_running_term;
   termin_t* next_term;
@@ -82,7 +95,6 @@ void task_switch()
   curr_running_term = get_terminal(running_tid);
   cur_pcb = get_pcb(curr_running_term->pid);
 
-  // printf("%x ", *pcb0_ebp);
   // After this function, running_tid is changed
   set_running_terminal();
 
@@ -106,37 +118,36 @@ void task_switch()
 
 
   // Store cur_pid's EBP,ESP
-  // register uint32_t saved_ebp asm("ebp");
-  // register uint32_t saved_esp asm("esp"); 
-  // cur_pcb->saved_ebp = saved_ebp;
-  // cur_pcb->saved_esp = saved_esp;
-
-
-  uint32_t saved_ebp, saved_esp;
-  asm volatile(
-    "movl %%esp, %0;"
-    "movl %%ebp, %1;"
-    :"=r"(saved_esp), "=r"(saved_ebp)
-    :
-  );
+  register uint32_t saved_ebp asm("ebp");
+  register uint32_t saved_esp asm("esp"); 
   cur_pcb->saved_ebp = saved_ebp;
   cur_pcb->saved_esp = saved_esp;
 
+
   // Context switch
   // Use next task's EBP,ESP
-  uint32_t ebp = next_pcb->saved_ebp;
-  uint32_t esp = next_pcb->saved_esp;
+  uint32_t next_ebp = next_pcb->saved_ebp;
+  uint32_t next_esp = next_pcb->saved_esp;
     asm volatile(
         "movl %0, %%esp;"
         "movl %1, %%ebp;"
         :
-        :"r"(esp), "r"(ebp)
+        :"r"(next_esp), "r"(next_ebp)
     );
   sti();
 
 
 }
 
+
+/*
+ * set_running_terminal
+ *   DESCRIPTION: change current running terminal next one
+ *   INPUTS: none
+ *   OUTPUTS: none
+ *   RETURN VALUE: none
+ *   SIDE EFFECTS: will update running_tid to next terminal's tid
+ */
 void set_running_terminal()
 {
   int i;

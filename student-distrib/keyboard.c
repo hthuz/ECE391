@@ -293,8 +293,7 @@ int is_alphabet(unsigned char scancode)
  *   DESCRIPTION: when the screen is full, screen by one line
  *   INPUTS: none
  *   OUTPUTS: none
- *   RETURN VALUE: 0 if scroll succeed
- * 				   -1 if fail
+ *   RETURN VALUE: none
  *   SIDE EFFECT: Will change the content of video memory
  */
 void scroll_one_line()
@@ -305,7 +304,6 @@ void scroll_one_line()
 	dest_mem = memmove(video_mem, (char *)(VIDEO + (NUM_COLS << 1)), VIDEO_SIZE - (NUM_COLS << 1));
 
 	// set video memory of last row to empty
-	// TODO: probabilty keyboard buffer need to be cleaned as well?
 	int32_t i;
 	for (i = 0; i < NUM_COLS; i++)
 	{
@@ -315,11 +313,17 @@ void scroll_one_line()
 	// reset position on screen
 	screen_x = 0;
 	screen_y--; // reset screen_y to NUM_ROWS - 1 (24)
-	// update_cursor(screen_x,screen_y);
 
 	return;
 }
 
+/* terminal_scroll_one_line
+ *   DESCRIPTION: scroll one line function for a specific terminal
+ *   INPUTS: tid -- terminal id to scroll 
+ *   OUTPUTS: none
+ *   RETURN VALUE: none
+ *   SIDE EFFECTS: will change the content of terminal's video memory
+ */
 void terminal_scroll_one_line(int32_t tid)
 {
   termin_t* term = get_terminal(tid);
@@ -329,7 +333,6 @@ void terminal_scroll_one_line(int32_t tid)
 	dest_mem = memmove(term->video_mem, (char *)(TERM_VID_ADDR(tid) + (NUM_COLS << 1)), VIDEO_SIZE - (NUM_COLS << 1));
 
 	// set video memory of last row to empty
-	// TODO: probabilty keyboard buffer need to be cleaned as well?
 	int32_t i;
 	for (i = 0; i < NUM_COLS; i++)
 	{
@@ -339,7 +342,6 @@ void terminal_scroll_one_line(int32_t tid)
 	// reset position on screen
 	term->screen_x = 0;
 	term->screen_y--; // reset screen_y to NUM_ROWS - 1 (24)
-	// update_cursor(screen_x,screen_y);
 
 	return;
 }
@@ -397,7 +399,6 @@ void disable_cursor()
  *   RETURN VALUE: none
  *   SIDE EFFECTS: change cursor's position
  */
-
 void update_cursor(int x, int y)
 {
 	uint16_t pos = y * NUM_COLS + x;

@@ -53,7 +53,7 @@ void idt_fill()
 
 }
 
-idt_exception_init()
+void idt_exception_init()
 {
     int i;
 

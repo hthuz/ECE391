@@ -118,3 +118,14 @@ char paging_init()
 }
 
 
+void flush_tlb()
+{
+  asm volatile(
+      "movl %%cr3, %%eax;"
+      "movl %%eax, %%cr3;"
+      :
+      :
+      : "%eax"
+      );
+}
+

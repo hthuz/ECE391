@@ -56,6 +56,10 @@ typedef struct open_file_table
     uint32_t flags; // 1 means in-use, 0 means not use it
 } open_file_table;
 
+
+
+extern nodes_block *mynode;
+
 // file init
 extern void fs_init_address(uint32_t address);
 void init_file_table(int32_t fd);

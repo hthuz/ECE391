@@ -255,6 +255,16 @@ void putc(uint8_t c)
     }
 }
 
+/*
+ * terminal_putc:
+ *   DESCRIPTION: putc at a certain termianl
+ *   INPUTS: c -- character to print
+ *			 tid -- terminal id to print on
+ *	 OUTPUTS: none
+ *	 RETURN VALUE: none
+ *	 SIDE EFFECTS: none
+ */
+
 void terminal_putc(uint8_t c, int32_t tid)
 {
   termin_t* term = get_terminal(tid);
@@ -268,7 +278,7 @@ void terminal_putc(uint8_t c, int32_t tid)
         term->screen_x = 0;
 		if(term->screen_y == NUM_ROWS)
 		  terminal_scroll_one_line(tid);
-		// update_cursor(screen_x,screen_y);
+		// update_cursor(term->screen_x,term->screen_y);
         break;
 
     case '\b':
@@ -290,7 +300,7 @@ void terminal_putc(uint8_t c, int32_t tid)
 			    *(uint8_t *)(term->video_mem + ((NUM_COLS * term->screen_y + term->screen_x) << 1) + 1) = ATTRIB;
 			}
 		}
-        // update_cursor(screen_x, screen_y);
+        // update_cursor(term->screen_x, term->screen_y);
         break;
 
     case '\t':
@@ -310,7 +320,7 @@ void terminal_putc(uint8_t c, int32_t tid)
             term->screen_x %= NUM_COLS;
             term->screen_y = (term->screen_y + (term->screen_x / NUM_COLS)) % NUM_ROWS;
         }
-        // update_cursor(screen_x, screen_y);
+        // update_cursor(term->screen_x, term->screen_y);
         break;
 
     default:
@@ -326,7 +336,7 @@ void terminal_putc(uint8_t c, int32_t tid)
         }
         term->screen_x %= NUM_COLS;
         term->screen_y = (term->screen_y + (term->screen_x / NUM_COLS)) % NUM_ROWS;
-		// update_cursor(screen_x,screen_y);
+		// update_cursor(term->screen_x,term->screen_y);
     }
 }
 

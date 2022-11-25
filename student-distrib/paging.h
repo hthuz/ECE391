@@ -64,5 +64,6 @@ extern pte_t video_p_table[PTE_NUM] __attribute__((aligned (P_4K_SIZE)));
 
 char paging_init();
 
+void flush_tlb();
 #endif
 

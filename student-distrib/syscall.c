@@ -10,10 +10,6 @@
 
 #define SYSCALL_FAIL -1;
 
-uint32_t* pcb0_ebp;
-int32_t* term1_pid;
-int halted = 0;
-
 // Initially, there is no process, denote as -1
 int32_t cur_pid = ROOT_PID;
 
@@ -21,23 +17,11 @@ int task_num = 0;
 // An array keeps track of all active tasks
 int running_tasks[MAX_TASK_NUM] = {0};
 
-extern pde_t p_dir[PDE_NUM] __attribute__((aligned(P_4K_SIZE)));
-extern nodes_block *mynode;
-
 optable_t stdin_optable;
-optable_t stdout_optable; // operation table for stdin and stdout
+optable_t stdout_optable;
 optable_t rtc_optable;
 optable_t file_optable;
 optable_t dir_optable;
-
-
-void show_task()
-{
-  int i;
-  for(i = 0; i < 6; i++)
-    printf("%d ",running_tasks[i]);
-  printf("\n");
-}
 
 /*
  * halt
@@ -94,14 +78,12 @@ int32_t halt(uint8_t status)
   }
 
   // Update terminal information
-  running_term->pid_num--;
   running_term->pid = cur_pid;
 
   // Jump to execute return
   uint32_t my_esp = parent_pcb->saved_esp;
   uint32_t my_ebp = parent_pcb->saved_ebp;
   uint32_t result = (uint32_t)status;
-  halted = 1;
   asm volatile(
       "movl %%ebx, %%ebp    ;"
       "movl %%ecx, %%esp    ;"
@@ -142,13 +124,11 @@ int32_t execute(const uint8_t *command)
     return -1;
   }
 
-
   if(check_exec(usr_cmd) == -1)
   {
     sti();
     return -1;
   }
-
 
   // record parentid and current id
   if(-1 == ( new_pid = create_pid() ))
@@ -173,7 +153,6 @@ int32_t execute(const uint8_t *command)
 
   // Update the process running in current terminal
   cur_term->pid = cur_pid;
-  cur_term->pid_num++;
   running_tid = cur_tid;
 
   set_process_paging(cur_pid);
@@ -399,13 +378,8 @@ void set_process_paging(int32_t pid)
   p_dir[index].u_su = 1;
   p_dir[index].base_addr = (((pid + 2) * P_4M_SIZE) >> 12);
 
-  // flush TLB
-  asm volatile(
-      "movl %%cr3, %%eax;"
-      "movl %%eax, %%cr3;"
-      :
-      :
-      : "%eax");
+  flush_tlb();
+
 }
 
 /*
@@ -429,13 +403,8 @@ void set_vidmap_paging()
                                                     // the address is multiple of 4k
                                                     // so lower 12 bits not required
   video_p_table[0].present = 1;
-  // flush TLB
-  asm volatile(
-      "movl %%cr3, %%eax;"
-      "movl %%eax, %%cr3;"
-      :
-      :
-      : "%eax");
+
+  flush_tlb();
 }
 
 void hide_term_vid_paging(int32_t tid)
@@ -452,13 +421,8 @@ void hide_term_vid_paging(int32_t tid)
                                                     // the address is multiple of 4k
                                                     // so lower 12 bits not required
   video_p_table[0].present = 1;
-  // flush TLB
-  asm volatile(
-      "movl %%cr3, %%eax;"
-      "movl %%eax, %%cr3;"
-      :
-      :
-      : "%eax");
+
+  flush_tlb();
 }
 /*
  * reset_vidmap_paging
@@ -662,8 +626,8 @@ pcb_t* create_pcb(int32_t pid, int32_t parent_pid,  uint8_t* usr_args)
   register uint32_t saved_esp asm("esp");
   if(parent_pid == -1)
   {
-    pcb->saved_ebp = saved_ebp;  // 0x7FFE60 for shell 0x7FFE98 for first program
-    pcb->saved_esp = saved_esp;  // 0x7FFE48 for shell 0x7FFE70 for first program
+    pcb->saved_ebp = saved_ebp;
+    pcb->saved_esp = saved_esp;
   }else
   {
     pcb_t* parent_pcb = get_pcb(pcb->parent_pid);
@@ -671,9 +635,6 @@ pcb_t* create_pcb(int32_t pid, int32_t parent_pid,  uint8_t* usr_args)
     parent_pcb->saved_esp = saved_esp;
   }
 
-
-
-  pcb->tid = cur_tid;
   return pcb;
 }
 

@@ -10,7 +10,7 @@
 
 // Current Terminal that user is on
 int32_t cur_tid;
-// CUrrent Termianl that scheduling is running
+// Current Terminal that scheduling is running
 int32_t running_tid;
 
 int term_switch_flag;
@@ -62,10 +62,9 @@ int32_t terminal_read(int32_t fd, void *buf, int32_t nbytes)
     if (buf == NULL)
         return SYSCALL_FAIL;
     termin_t* running_term = get_terminal(running_tid);
-        // do nothing until enter is pressed
- 
+
+    // do nothing until enter is pressed
     while (running_term->enter_pressed == 0);
-    // printf("%d",running_tid);
     cli();
     int i;
     int j;
@@ -98,9 +97,6 @@ int32_t terminal_read(int32_t fd, void *buf, int32_t nbytes)
     running_term->enter_pressed = 0;
     sti();
 
-    if(0 == strncmp(charbuf, "ps\n",3))
-      show_task();
-
     return i ;
 }
 
@@ -117,16 +113,16 @@ int32_t terminal_read(int32_t fd, void *buf, int32_t nbytes)
  */
 int32_t terminal_write(int32_t fd, const void *buf, int32_t nbytes)
 {
-    if (nbytes < 0)
-      return SYSCALL_FAIL;
-    if (buf == NULL)
-      return SYSCALL_FAIL;
+  if (nbytes < 0)
+    return SYSCALL_FAIL;
+  if (buf == NULL)
+    return SYSCALL_FAIL;
 
-    cli();
-    int i;
-    char *charbuf = (char *)buf;
+  cli();
+  int i;
+  char *charbuf = (char *)buf;
 
-  // printf("%d",running_tid);
+  /*
   if(cur_tid == running_tid)
   {
     for (i = 0; i < nbytes; i++)
@@ -137,9 +133,20 @@ int32_t terminal_write(int32_t fd, const void *buf, int32_t nbytes)
     for (i = 0; i < nbytes; i++)
       terminal_putc(charbuf[i],running_tid);
   }
+  */
+
+  for(i = 0; i < nbytes; i++)
+  {
+    if(cur_tid == running_tid)
+      putc(charbuf[i]);
+    else
+      terminal_putc(charbuf[i],running_tid);
+  }
+  termin_t* cur_term = get_terminal(cur_tid);
+  // update_cursor(cur_term->screen_x,cur_term->screen_y);
 
   sti();
-    return nbytes;
+  return nbytes;
 }
 
 
@@ -181,19 +188,13 @@ void terminal_init()
       terminals[tid].kb_buf[i] = '\0';
     terminals[tid].kb_buf_length = 0;
 
-    for(i = 0; i < MAX_TASK_NUM; i++)
-      terminals[tid].pid_list[i] = NO_PID;
-    terminals[tid].pid_num = 0;
     terminals[tid].pid = NO_PID;
     terminals[tid].enter_pressed = 0;
   }    
-
-
-  // Terminal 0 is invoked 
-  terminals[0].invoked = 1;
-
+  flush_tlb();
 
   // Initialize global variables
+  terminals[0].invoked = 1;
   cur_tid = 0;
   running_tid = 0;
   term_num = 1;
@@ -207,7 +208,7 @@ void terminal_init()
  *                based on terminal id
  *   INPUTS: tid -- terminal id(0,1,2)
  *   OUTPUTS: none
- *   RETURN VALUE: The corresponding termianl struct
+ *   RETURN VALUE: The corresponding terminal struct
  *   SIDE EFFECTS: none
  */
 termin_t* get_terminal(int32_t tid)
@@ -236,7 +237,7 @@ void terminal_switch(int32_t new_tid)
   termin_t* cur_term = get_terminal(cur_tid);
   termin_t* new_term = get_terminal(new_tid);
   // Save current used terminal video memory
-  memcpy((void*)cur_term->video_mem,(const void*) VID_MEM_START, P_4K_SIZE);
+     memcpy((void*)cur_term->video_mem,(const void*) VID_MEM_START, P_4K_SIZE);
   
   // Set new terminal video memory
   memcpy((void*) VID_MEM_START, (const void*)new_term->video_mem, P_4K_SIZE);
@@ -255,18 +256,15 @@ void terminal_switch(int32_t new_tid)
   // Start new shell if it's not invoked
   if(new_term->invoked == 0)
   {
-    printf("start new shell");
     new_term->invoked = 1;
     term_num++;
     term_switch_flag = 1;
-    term1_pid = &(terminals[1].pid);
 
     asm volatile(
       "movl %%ebp, %0;"
       "movl %%esp, %1"
       :"=r"(cur_pcb->saved_ebp), "=r"(cur_pcb->saved_esp)
     );
-    // cur_pid = ROOT_PID; // Not Necessary
     printf("TERMINAL #%d\n",cur_tid);
     execute((uint8_t *)"shell");
   }
