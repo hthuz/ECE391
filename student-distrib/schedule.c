@@ -88,7 +88,7 @@ void task_switch()
 
   next_term = get_terminal(running_tid);
   next_pid = next_term->pid;
-  printf("%d",*term1_pid);
+
   next_pcb = get_pcb(next_pid);
 
   // // If running termianl is current terminal, show it

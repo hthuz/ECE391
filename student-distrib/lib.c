@@ -325,7 +325,7 @@ void terminal_putc(uint8_t c, int32_t tid)
 				terminal_scroll_one_line(tid);
         }
         term->screen_x %= NUM_COLS;
-        term->screen_y = (screen_y + (screen_x / NUM_COLS)) % NUM_ROWS;
+        term->screen_y = (term->screen_y + (term->screen_x / NUM_COLS)) % NUM_ROWS;
 		// update_cursor(screen_x,screen_y);
     }
 }
