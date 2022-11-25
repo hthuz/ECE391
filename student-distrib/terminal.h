@@ -16,13 +16,16 @@
 struct termin_t
 {
   int invoked;
+  int32_t pid;      // Current task that runs on this terminal
   char* video_mem;
   int screen_x;
   int screen_y;
   unsigned char kb_buf[KB_BUF_SIZE];
   int kb_buf_length;
   int enter_pressed;
-  int32_t pid;      // Current task that runs on this terminal
+  int rtc_interrupt;
+  int rtc_freq;
+
 };
 
 typedef struct termin_t termin_t;

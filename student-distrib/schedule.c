@@ -103,11 +103,11 @@ void task_switch()
 
   next_pcb = get_pcb(next_pid);
 
-  // // If running termianl is current terminal, show it
-  // if (running_tid == cur_tid)
-  //   set_vidmap_paging(W);
-  // else
-  //   hide_term_vid_paging(running_tid);
+   // If running termianl is current terminal, show it
+  if (running_tid == cur_tid)
+     set_vidmap_paging();
+  else
+     hide_term_vid_paging(running_tid);
 
   set_process_paging(next_pid);
 

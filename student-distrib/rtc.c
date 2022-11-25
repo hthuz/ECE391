@@ -2,6 +2,7 @@
 #include "types.h"
 #include "lib.h"
 #include "i8259.h"
+#include "terminal.h"
 
 volatile uint8_t rtc_counter;
 
@@ -54,41 +55,11 @@ void rtc_handler()
     rtc_counter++;
     outb(0x0C, RTC_PORT);
     inb(RTC_DATA);
-    interrupt = 1;
+    termin_t* running_term = get_terminal(running_tid);
+    running_term->rtc_interrupt = 1;
     sti();
     // send end
     send_eoi(IRQ8);
-}
-
-/*
- *   rtc_set_rate
- *   DESCRIPTION: set RTC rate according to input requence.
- *   INPUTS: input: the frequence we want
- *   OUTPUTS: none
- *   RETURN VALUE: 0
- *   SIDE EFFECTS: none.
- */
-
-int32_t rtc_set_rate(int32_t frequence)
-{
-    // uint32_t rate;
-    // rate = freq2rate(frequence);
-    // if (rate == -1) return -1;
-    char prev;
-    if (isPowerOfTwo(frequence) == 0)
-        return -1;
-    int32_t fre_index = 16 - isPowerOfTwo(frequence);
-    cli();
-    // set index to rtca to stop NMI
-    outb(RTCA, RTC_PORT);
-    // get value of rtca
-    prev = inb(RTC_DATA);
-    // reset rtca
-    outb(RTCA, RTC_PORT);
-    // put our frequence in rtca
-    outb((prev & RTC_MASK) | (fre_index & RTC_F), RTC_DATA);
-    sti();
-    return 0;
 }
 
 /*
@@ -131,11 +102,69 @@ int32_t rtc_close(int32_t fd)
  */
 int32_t rtc_read(int32_t fd, void *buf, int32_t nbytes)
 {
-    while (interrupt == 0)
-        ;
-    interrupt = 0;
+    termin_t* running_term = get_terminal(running_tid);
+    while (running_term->rtc_interrupt == 0)
+    {
+        running_term = get_terminal(running_tid);
+    };
+    running_term->rtc_interrupt = 0;
     return 0;
 }
+
+/*
+ *   rtc_write
+ *   DESCRIPTION: write RTC rate value.
+ *   INPUTS: fd: integer.
+ *			 buf: a pointer which stores the frequency with power of two
+ *			 nbytes: the bytes that writes per time.
+ *   OUTPUTS: none
+ *   RETURN VALUE: 0 or -1
+ *   SIDE EFFECTS: none.
+ */
+int32_t rtc_write(int32_t fd, const void *buf, int32_t nbytes)
+{
+    cli();
+    int32_t *ret_buf = (int32_t *)buf;
+    if ((ret_buf == NULL))
+        return -1;
+    if (rtc_set_rate(ret_buf[0]) == -1)
+    {
+        printf("please use power of two and smaller than 1024");
+    }
+    sti();
+    return 0;
+}
+
+
+/*
+ *   rtc_set_rate
+ *   DESCRIPTION: set RTC rate according to input requence.
+ *   INPUTS: input: the frequence we want
+ *   OUTPUTS: none
+ *   RETURN VALUE: 0
+ *   SIDE EFFECTS: none.
+ */
+
+int32_t rtc_set_rate(int32_t frequence)
+{
+
+    char prev;
+    if (isPowerOfTwo(frequence) == 0)
+        return -1;
+    int32_t fre_index = 16 - isPowerOfTwo(frequence);
+    cli();
+    // set index to rtca to stop NMI
+    outb(RTCA, RTC_PORT);
+    // get value of rtca
+    prev = inb(RTC_DATA);
+    // reset rtca
+    outb(RTCA, RTC_PORT);
+    // put our frequence in rtca
+    outb((prev & RTC_MASK) | (fre_index & RTC_F), RTC_DATA);
+    sti();
+    return 0;
+}
+
 
 /* int isPowerOfTwo()
  *  Description: Checks if it is a power of two and calculate
@@ -163,26 +192,3 @@ int isPowerOfTwo(int num)
     return i;
 }
 
-/*
- *   rtc_write
- *   DESCRIPTION: write RTC rate value.
- *   INPUTS: fd: integer.
- *			 buf: a pointer which stores the frequency with power of two
- *			 nbytes: the bytes that writes per time.
- *   OUTPUTS: none
- *   RETURN VALUE: 0 or -1
- *   SIDE EFFECTS: none.
- */
-int32_t rtc_write(int32_t fd, const void *buf, int32_t nbytes)
-{
-    cli();
-    int32_t *ret_buf = (int32_t *)buf;
-    if ((ret_buf == NULL))
-        return -1;
-    if (rtc_set_rate(ret_buf[0]) == -1)
-    {
-        printf("please use power of two and smaller than 1024");
-    }
-    sti();
-    return 0;
-}

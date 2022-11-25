@@ -192,6 +192,10 @@ void terminal_init()
 
     terminals[tid].pid = NO_PID;
     terminals[tid].enter_pressed = 0;
+
+    // RTC 
+    terminals[tid].rtc_interrupt = 0;
+    terminals[tid].rtc_freq = 0;
   }    
   flush_tlb();
 
@@ -262,11 +266,19 @@ void terminal_switch(int32_t new_tid)
     term_num++;
     term_switch_flag = 1;
 
+    /*
+    register uint32_t saved_ebp;
+    register uint32_t saved_esp;
+    cur_pcb->saved_ebp = saved_ebp;
+    cur_pcb->saved_esp = saved_esp;
+    */
+
     asm volatile(
       "movl %%ebp, %0;"
       "movl %%esp, %1"
       :"=r"(cur_pcb->saved_ebp), "=r"(cur_pcb->saved_esp)
     );
+
     printf("TERMINAL #%d\n",cur_tid);
     execute((uint8_t *)"shell");
   }
