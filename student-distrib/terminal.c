@@ -142,8 +142,6 @@ int32_t terminal_write(int32_t fd, const void *buf, int32_t nbytes)
     else
       terminal_putc(charbuf[i],running_tid);
   }
-  termin_t* cur_term = get_terminal(cur_tid);
-  // update_cursor(cur_term->screen_x,cur_term->screen_y);
 
   sti();
   return nbytes;
@@ -177,7 +175,11 @@ void terminal_init()
     p_table[PTE_INDEX(vid_addr)].present = 1;
 
     // Clear Video Memory
-    memset((void *)vid_addr, 0,P_4K_SIZE);
+    for(i = 0; i < NUM_ROWS * NUM_COLS; i++)
+    {
+      *(uint8_t*)(video_mem + (i << 1)) = ' ';
+      *(uint8_t*)(video_mem + (i << 1) + 1) = ATTRIB;
+    }
 
     // Screen Position
     terminals[tid].screen_x = 0;
