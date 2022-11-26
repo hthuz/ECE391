@@ -196,6 +196,7 @@ void terminal_init()
     // RTC 
     terminals[tid].rtc_interrupt = 0;
     terminals[tid].rtc_freq = 0;
+    terminals[tid].rtc_counter = 0;
   }    
   flush_tlb();
 
@@ -236,12 +237,24 @@ void terminal_switch(int32_t new_tid)
 {
 
   // If Switch to the same terminal, do nothing
-  if(cur_tid == new_tid)
+  if (cur_tid == new_tid)
     return;
+
   
   pcb_t* cur_pcb = get_pcb(cur_pid);
   termin_t* cur_term = get_terminal(cur_tid);
   termin_t* new_term = get_terminal(new_tid);
+
+  // If Switch to new terminal but task number if full
+  if(new_term->invoked == 0 && (task_num == MAX_TASK_NUM))
+  {
+    printf("\nCan't Start New Shell\n");
+    cur_term->kb_buf[0] = '\n';
+    cur_term->kb_buf_length = 1;
+    cur_term->enter_pressed = 1;
+    return;
+  }
+
   // Save current used terminal video memory
      memcpy((void*)cur_term->video_mem,(const void*) VID_MEM_START, P_4K_SIZE);
   
@@ -262,22 +275,10 @@ void terminal_switch(int32_t new_tid)
   // Start new shell if it's not invoked
   if(new_term->invoked == 0)
   {
+
     new_term->invoked = 1;
     term_num++;
     term_switch_flag = 1;
-
-    /*
-    register uint32_t saved_ebp;
-    register uint32_t saved_esp;
-    cur_pcb->saved_ebp = saved_ebp;
-    cur_pcb->saved_esp = saved_esp;
-    */
-
-    asm volatile(
-      "movl %%ebp, %0;"
-      "movl %%esp, %1"
-      :"=r"(cur_pcb->saved_ebp), "=r"(cur_pcb->saved_esp)
-    );
 
     printf("TERMINAL #%d\n",cur_tid);
     execute((uint8_t *)"shell");

@@ -50,13 +50,11 @@ int rtc_init()
 void rtc_handler()
 {
     cli();
-    // printf("come here");
-    //  increse the counter
-    rtc_counter++;
+    termin_t* running_term = get_terminal(running_tid);
+    running_term->rtc_counter++;
+
     outb(0x0C, RTC_PORT);
     inb(RTC_DATA);
-    termin_t* running_term = get_terminal(running_tid);
-    running_term->rtc_interrupt = 1;
     sti();
     // send end
     send_eoi(IRQ8);
@@ -73,7 +71,9 @@ void rtc_handler()
 
 int32_t rtc_open(const uint8_t *filename)
 {
-    rtc_set_rate(MIN_FREQUENCE);
+    // rtc_set_rate(MIN_FREQUENCE);
+    termin_t* running_term = get_terminal(running_tid);
+    running_term->rtc_freq = MIN_FREQUENCE;
     return 0;
 }
 
@@ -103,11 +103,9 @@ int32_t rtc_close(int32_t fd)
 int32_t rtc_read(int32_t fd, void *buf, int32_t nbytes)
 {
     termin_t* running_term = get_terminal(running_tid);
-    while (running_term->rtc_interrupt == 0)
-    {
-        running_term = get_terminal(running_tid);
-    };
-    running_term->rtc_interrupt = 0;
+    while (running_term->rtc_counter < (MAX_FREQUENCE / running_term->rtc_freq));
+
+    running_term->rtc_counter = 0;
     return 0;
 }
 
@@ -127,10 +125,16 @@ int32_t rtc_write(int32_t fd, const void *buf, int32_t nbytes)
     int32_t *ret_buf = (int32_t *)buf;
     if ((ret_buf == NULL))
         return -1;
+    /*
     if (rtc_set_rate(ret_buf[0]) == -1)
     {
         printf("please use power of two and smaller than 1024");
     }
+    */
+    
+    termin_t* running_term = get_terminal(running_tid);
+    running_term->rtc_freq = ret_buf[0];
+
     sti();
     return 0;
 }

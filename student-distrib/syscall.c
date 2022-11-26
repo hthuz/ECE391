@@ -142,6 +142,12 @@ int32_t execute(const uint8_t *command)
   {
     parent_pid = ROOT_PID;
     term_switch_flag = 0;
+
+    pcb_t* cur_pcb = get_pcb(cur_pid);
+    register uint32_t saved_ebp asm("ebp");
+    register uint32_t saved_esp asm("esp");
+    cur_pcb->saved_ebp = saved_ebp;
+    cur_pcb->saved_esp = saved_esp;
   }
   else
   {
@@ -153,6 +159,7 @@ int32_t execute(const uint8_t *command)
 
   // Update the process running in current terminal
   cur_term->pid = cur_pid;
+  // Current terminal should be set to running immediately
   running_tid = cur_tid;
 
   set_process_paging(cur_pid);

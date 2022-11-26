@@ -24,6 +24,7 @@ struct termin_t
   int kb_buf_length;
   int enter_pressed;
   int rtc_interrupt;
+  int rtc_counter;
   int rtc_freq;
 
 };
