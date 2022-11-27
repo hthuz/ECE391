@@ -7,6 +7,7 @@
 #define PIT_VEC 0x20
 #define KEYBOARD_VEC  0x21
 #define RTC_VEC  0x28
+#define MOUSE_VEC  0x2c
 #define SYS_CALL_VEC  0x80
 
 void idt_exception_init();

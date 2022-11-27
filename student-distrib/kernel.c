@@ -17,6 +17,7 @@
 #include "syscall.h"
 #include "terminal.h"
 #include "schedule.h"
+#include "mouse.h"
 #define RUN_TESTS
 
 /* Macros. */

@@ -27,6 +27,24 @@ void clear(void)
     screen_y = 0;
 }
 
+/* void clear(void);
+ * Inputs: void
+ * Return Value: none
+ * Function: Clears video memory */
+void set_background_green(int32_t x, int32_t y)
+{
+     *(uint8_t *)(video_mem + ((NUM_COLS * y + x) << 1) + 1) = 0x30;
+}
+
+/* void clear(void);
+ * Inputs: void
+ * Return Value: none
+ * Function: Clears video memory */
+void set_background_black(int32_t x, int32_t y)
+{
+     *(uint8_t *)(video_mem + ((NUM_COLS * y + x) << 1) + 1) = ATTRIB;
+}
+
 /* Standard printf().
  * Only supports the following format strings:
  * %%  - print a literal '%' character
