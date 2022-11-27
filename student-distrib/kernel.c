@@ -169,6 +169,8 @@ void entry(unsigned long magic, unsigned long addr) {
 	// Initialize terminal
 	terminal_init();
 	
+    // initialize mouse
+    mouse_init();
 	// Enalbe interrupt
     sti();
 
