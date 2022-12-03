@@ -6,12 +6,13 @@
 
 #define MOUSE_PORT 0x64
 #define MOUSE_IRQ 12
-#define RESET_COM 0xff
-#define PACKET_STR_COM 0xf4
+#define RESET_CMD 0xff
+#define ENABLE_PACKET_STREM_CMD 0xf4
 #define MASK_THIRD 0xdf
 #define SLOW_RATE  6
 #define WIDTH   80
 #define HEIGHT  25
+
 
 #define GET_FIRST   0x80
 #define GET_SECOND  0x40
@@ -37,5 +38,6 @@ void write_keyboard_port(uint8_t data);
 void send_command(uint8_t command);
 void wait_input();
 void wait_output();
+
 
 #endif /* _MOUSE_H*/

@@ -41,8 +41,10 @@ void write_keyboard_port(uint8_t data){
 void send_command(uint8_t command){
     wait_output();
     outb(0xd4,MOUSE_PORT);
+
     wait_output();
     outb(command,KEY_PORT);
+
 }
 /* 
  *  wait_port()
@@ -62,7 +64,7 @@ void wait_input(){
         // for bit 1
         if ( (inb(MOUSE_PORT)& 0x01) !=0 ) break;
     }
-    // printf("wait input success\n");
+
 }
 
 
@@ -84,7 +86,7 @@ void wait_output(){
         // for bit 2
         if ((inb(MOUSE_PORT)& 0x02)!=1) break;
     }
-    // printf("wait output success\n");
+
 }
 
 
@@ -97,24 +99,34 @@ void wait_output(){
  *  SIDE EFFECTS: 
  */
 void mouse_init(){
-    // reset
-    send_command(RESET_COM);
+
+    send_command(RESET_CMD);
+
     // Set Compaq Status
+    // Send "Get Compaq Status Byte"
     write_mouse_port(0x20);
-    // Very next byte returned should be the Status byte, 
-    // |Y overflow	|X overflow	 |Y sign bit  |X sign bit	
-    // |Always 1	|Middle Btn	 |Right Btn	  |Left Btn
-    uint8_t status = read_keyboard_port();
-    status = ((status | 0x02 ) & MASK_THIRD );  // magic number for set status
-    // write status
+
+    uint8_t status;
+    status = read_keyboard_port();
+
+    // Set bit 1 to enable IRQ 12
+    status |= 0x02;
+    // Clear bit 5 to disable Mouse Clock
+    status &= (~0x20);
+
+
+    // Send "Set Compaq Status"
     write_mouse_port(KEY_PORT);
     write_keyboard_port(status);
 
-    // mouse send packets
-    send_command(PACKET_STR_COM);
+    // Enable Packet Streaming
+    send_command(ENABLE_PACKET_STREM_CMD);
+    // Acknowledge packet streaming
+    while(inb(KEY_PORT) != 0xFA);
+
 
     set_background_green(mouse_x,mouse_y);
-    // enable IRQ12
+    // Enable IRQ12
     enable_irq(MOUSE_IRQ);
 }
 
@@ -123,6 +135,7 @@ void mouse_init(){
 void mouse_handler(){
     // printf("call handler\n");
     send_eoi(MOUSE_IRQ);
+
     int32_t x_move,y_move;
     uint8_t packet = read_keyboard_port();
     uint8_t y_over = ( packet & GET_FIRST) ;
@@ -162,15 +175,12 @@ void mouse_handler(){
     // set_background_black(previous_x,previous_y);
     previous_x = mouse_x;
     previous_y = mouse_y;
-    // set_background_black(previous_x,previous_y);
-    // if ( r_button == GET_SEVENTH ) 
-    //     terminal_switch(0);
-    // if ( m_button == GET_SIXTH) 
-    //     terminal_switch(1);
+
     if ( l_button == GET_LAST ) {
         set_background_black(mouse_x,mouse_y);
         terminal_switch(0);
     }
+
 }
 
 
