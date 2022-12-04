@@ -36,7 +36,7 @@ int32_t halt(uint8_t status)
 {
   cli();
 
-  int i;
+  int fd;
   pcb_t *cur_pcb = get_pcb(cur_pid);
   termin_t* running_term = get_terminal(running_tid);
 
@@ -52,6 +52,14 @@ int32_t halt(uint8_t status)
     execute((uint8_t *)"shell");
   }
 
+
+  // Close any relevant FDs
+  for (fd = 0; fd < FARRAY_SIZE; fd++)
+  {
+    if(cur_pcb->farray[fd].flags != 0)
+      close(fd);
+  }
+
   // Note now cur_pid has become parent_pid
   // But cur_pcb doesn't change
   free_pid(cur_pid);
@@ -63,11 +71,7 @@ int32_t halt(uint8_t status)
   tss.esp0 = K_BASE - cur_pid * K_TASK_STACK_SIZE - sizeof(int32_t);
   // Restore parent paging
   set_process_paging(cur_pid); // flushing TLB has been contained.
-  // Close any relevant FDs
-  for (i = 0; i < FARRAY_SIZE; i++)
-  {
-    (cur_pcb->farray[i]).flags = 0; // 0 means inactive
-  }
+
 
   // close the relevant video memory
   if (cur_pcb->use_vid == 1)
@@ -83,6 +87,7 @@ int32_t halt(uint8_t status)
   uint32_t my_esp = cur_pcb->saved_esp;
   uint32_t my_ebp = cur_pcb->saved_ebp;
   uint32_t result = (uint32_t)status;
+
   sti();
   asm volatile(
       "movl %%ebx, %%ebp    ;"
