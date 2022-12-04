@@ -265,7 +265,6 @@ int32_t open(const uint8_t *filename)
   // if fd is -1, no descripto is free now
   if (fd == -1)
   {
-    printf("no descriptor is free now");
     return SYSCALL_FAIL;
   }
   // according to the found fd, set position and flag
