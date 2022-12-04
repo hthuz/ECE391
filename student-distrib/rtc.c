@@ -50,8 +50,16 @@ int rtc_init()
 void rtc_handler()
 {
     cli();
-    termin_t* running_term = get_terminal(running_tid);
-    running_term->rtc_counter++;
+    termin_t* term;
+    int i;
+
+    for(i = 0; i < MAX_TERM_NUM; i++)
+    {
+        term = get_terminal(i);
+        if(term->invoked == 1)
+            term->rtc_counter++; 
+    }
+
 
     outb(0x0C, RTC_PORT);
     inb(RTC_DATA);
