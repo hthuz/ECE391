@@ -37,17 +37,23 @@ void idt_fill()
     idt[PIT_VEC].present = 1;
     idt[KEYBOARD_VEC].present = 1;
     idt[RTC_VEC].present = 1;
+#if (ENABLE_MOUSE)
     idt[MOUSE_VEC].present = 1;
+#endif
 
     idt[PIT_VEC].reserved3 = 0;
     idt[KEYBOARD_VEC].reserved3 = 0;
     idt[RTC_VEC].reserved3 = 0; // has changed
+#if (ENABLE_MOUSE)
     idt[MOUSE_VEC].reserved3 = 0;
+#endif
 
     SET_IDT_ENTRY(idt[PIT_VEC], pit_linkage);
     SET_IDT_ENTRY(idt[KEYBOARD_VEC], keyboard_linkage);
     SET_IDT_ENTRY(idt[RTC_VEC], rtc_linkage);
+#if (ENABLE_MOUSE)
     SET_IDT_ENTRY(idt[MOUSE_VEC], mouse_linkage);
+#endif
 
     // System Call
     idt[SYS_CALL_VEC].present = 1;

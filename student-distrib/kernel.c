@@ -18,7 +18,7 @@
 #include "terminal.h"
 #include "schedule.h"
 #include "mouse.h"
-#define RUN_TESTS
+// #define RUN_TESTS
 
 /* Macros. */
 /* Check if the bit BIT in FLAGS is set. */
@@ -169,8 +169,10 @@ void entry(unsigned long magic, unsigned long addr) {
 	// Initialize terminal
 	terminal_init();
 	
+#if (ENABLE_MOUSE)
     // initialize mouse
     mouse_init();
+#endif
     
     optable_init();	
 	// Enalbe interrupt
@@ -179,7 +181,7 @@ void entry(unsigned long magic, unsigned long addr) {
 
 #ifdef RUN_TESTS
     /* Run tests */
-    // launch_tests();
+    launch_tests();
 #endif
     /* Execute the first program ("shell") ... */
 

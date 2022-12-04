@@ -316,10 +316,12 @@ void scroll_one_line()
 	screen_x = 0;
 	screen_y--; // reset screen_y to NUM_ROWS - 1 (24)
 
+#if (ENALBE_MOUSE)
 	set_background_green(mouse_x, mouse_y);
 	if(mouse_y != 0){
 		set_background_black(mouse_x,mouse_y - 1 );
 	}
+#endif
 
 
 	return;
@@ -351,10 +353,12 @@ void terminal_scroll_one_line(int32_t tid)
 	term->screen_x = 0;
 	term->screen_y--; // reset screen_y to NUM_ROWS - 1 (24)
 
+#if (ENALBE_MOUSE)
 	set_background_green(mouse_x, mouse_y);
 	if(mouse_y != 0){
 		set_background_black(mouse_x,mouse_y - 1 );
 	}
+#endif
 
 	return;
 }

@@ -4,6 +4,9 @@
 
 #include "lib.h"
 
+// Change following to 1 to enable mouse
+#define ENABLE_MOUSE 0
+
 #define MOUSE_PORT 0x64
 #define MOUSE_IRQ 12
 #define RESET_CMD 0xff
