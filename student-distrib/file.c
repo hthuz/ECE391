@@ -6,7 +6,6 @@
 
 extern int32_t cur_pid;
 
-uint32_t dir_file_read;
 boot_block *myboot;
 nodes_block *mynode;
 // open_file_table my_file_table[8];       // just like the file_table drew in note
@@ -110,7 +109,7 @@ int32_t read_dentry_by_index(uint32_t index, dentry_t *dentry)
     // check the -1 case
     if (index >= myboot->num_dir_entries)
     {
-        printf("index out of range");
+        // printf("index out of range");
         return -1;
     }
 
@@ -345,7 +344,6 @@ int32_t file_read(int32_t fd, void *buf, int32_t nbytes)
 int directory_open(const uint8_t *fname)
 {
     dentry_t thedentry;
-    dir_file_read = 0; // used to read file name
     if (read_dentry_by_name(fname, &thedentry) == -1)
         return -1; // fail to find the name
     if (thedentry.filetype != 1)
@@ -363,7 +361,6 @@ int directory_open(const uint8_t *fname)
  */
 int directory_close()
 {
-    dir_file_read = 0; // used to read file name
     return 0;
 }
 
@@ -391,32 +388,25 @@ int directory_write()
  */
 int32_t directory_read(int32_t fd, void *buf, int32_t nbytes)
 {
+    int read_result;
     dentry_t dentry_test;
-    nodes_block *test_node;
     int32_t i;
-    uint32_t helloinode;
-    uint32_t filelength;
+    pcb_t* cur_pcb=get_pcb(cur_pid);
     uint8_t *ret_buf = (uint8_t *)buf;
     for (i = 0; i <= NameLen; i++)
     {
         ret_buf[i] = '\0';
     }
-    read_dentry_by_index(dir_file_read, &dentry_test);
-    helloinode = dentry_test.inode;
-    test_node = (nodes_block *)(mynode + helloinode);
-    filelength = test_node->length;
-    // must use putc here, printf would like to find the '\0'
+    read_result = read_dentry_by_index(cur_pcb->farray[fd].f_pos, &dentry_test);
+    if (read_result == -1) 
+        return 0;
     for (i = 0; i < NameLen; i++)
     {
         ret_buf[i] = dentry_test.filename[i];
     }
-    dir_file_read++;
-    // printf("dir_file_read is: %d    ",dir_file_read);
-    // printf("%d    ",strlen((int8_t*) ret_buf));
-    if (dir_file_read == myboot->num_dir_entries)
-        return 0; // come to the end
+    cur_pcb->farray[fd].f_pos ++;
+
     return strlen((int8_t*) ret_buf);
-    // return nbytes;
 }
 
 // useless functions
