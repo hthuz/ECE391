@@ -110,13 +110,14 @@ int32_t halt(uint8_t status)
  */
 int32_t execute(const uint8_t *command)
 {
+  cli();
   pcb_t *pcb;               // PCB of program
   int32_t parent_pid;       // Record of parent id
   int32_t new_pid;          // new pid for this newly executed program
   uint8_t usr_cmd[ARG_LEN];
   uint8_t usr_args[ARG_LEN];
   termin_t* cur_term = get_terminal(cur_tid);
-  cli();
+
 
   if(parse_args(command, usr_cmd, usr_args) == -1)
   {

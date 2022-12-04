@@ -3,6 +3,7 @@
 #include "lib.h"
 #include "i8259.h"
 #include "terminal.h"
+#include "mouse.h"
 
 /* Array for the characters without shift or CAPS */
 // Refer to https://wiki.osdev.org/Keyboard ScanCode set 1
@@ -303,6 +304,7 @@ void scroll_one_line()
 	// move memory starting frow second row to first row
 	dest_mem = memmove(video_mem, (char *)(VIDEO + (NUM_COLS << 1)), VIDEO_SIZE - (NUM_COLS << 1));
 
+
 	// set video memory of last row to empty
 	int32_t i;
 	for (i = 0; i < NUM_COLS; i++)
@@ -313,6 +315,12 @@ void scroll_one_line()
 	// reset position on screen
 	screen_x = 0;
 	screen_y--; // reset screen_y to NUM_ROWS - 1 (24)
+
+	set_background_green(mouse_x, mouse_y);
+	if(mouse_y != 0){
+		set_background_black(mouse_x,mouse_y - 1 );
+	}
+
 
 	return;
 }
@@ -342,6 +350,11 @@ void terminal_scroll_one_line(int32_t tid)
 	// reset position on screen
 	term->screen_x = 0;
 	term->screen_y--; // reset screen_y to NUM_ROWS - 1 (24)
+
+	set_background_green(mouse_x, mouse_y);
+	if(mouse_y != 0){
+		set_background_black(mouse_x,mouse_y - 1 );
+	}
 
 	return;
 }

@@ -34,7 +34,15 @@ void clear(void)
  * Function: Clears video memory */
 void set_background_green(int32_t x, int32_t y)
 {
-    *(uint8_t *)(video_mem + ((NUM_COLS * y + x) << 1) + 1) = 0x30;
+    *(uint8_t *)(video_mem + ((NUM_COLS * y + x) << 1) + 1) = 0x60;
+    int i;
+    termin_t* term;
+    for(i = 0; i < MAX_TERM_NUM; i++)
+    {
+        term = get_terminal(i);
+        *(uint8_t *)(term->video_mem + ((NUM_COLS * y + x) << 1) + 1) = 0x60;
+    }
+
 }
 
 /* void clear(void);
@@ -44,6 +52,13 @@ void set_background_green(int32_t x, int32_t y)
 void set_background_black(int32_t x, int32_t y)
 {
     *(uint8_t *)(video_mem + ((NUM_COLS * y + x) << 1) + 1) = ATTRIB;
+    int i;
+    termin_t* term;
+    for(i = 0; i < MAX_TERM_NUM; i++)
+    {
+        term = get_terminal(i);
+        *(uint8_t *)(term->video_mem + ((NUM_COLS * y + x) << 1) + 1) = ATTRIB;
+    }
 }
 
 /* Standard printf().

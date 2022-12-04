@@ -5,11 +5,11 @@
 #include "i8259.h"
 #include "terminal.h"
 
-int32_t mouse_x = 0;
-int32_t mouse_y = 0;
-int32_t previous_x = 0;
-int32_t previous_y = 0;
-// int32_t turn_term_flag=1;
+// Initially at center
+int32_t mouse_x = 40;
+int32_t mouse_y = 12;
+int32_t previous_x = 40;
+int32_t previous_y = 12;
 
 
 uint8_t read_mouse_port()
@@ -23,7 +23,7 @@ uint8_t read_mouse_port()
 uint8_t read_keyboard_port()
 {
     uint8_t data;
-    // wait_input();
+    wait_input();
     data = inb(KEY_PORT);
     return data;
 }
@@ -105,6 +105,8 @@ void wait_output()
 void mouse_init()
 {
 
+    // From keyboard or mouse
+    
     send_command(RESET_CMD);
 
     // Set Compaq Status
@@ -135,26 +137,38 @@ void mouse_init()
 
 void mouse_handler()
 {
-
     uint8_t packet;
     int8_t x_move;
     int8_t y_move;
     uint8_t x_sign;
     uint8_t y_sign;
     uint8_t l_button;
+    uint8_t data;
 
-    packet = read_keyboard_port();
+    data = inb(MOUSE_PORT);
+
+    // Is the byte available to read
+    if( (data & 0x01) == 0)
+    {
+        send_eoi(MOUSE_IRQ);
+        return;
+    }
+    // Is it from mouse
+    data = inb(MOUSE_PORT);
+    if( (data & 0x20) == 0)
+    {
+        send_eoi(MOUSE_IRQ);
+        return;
+    }
+
+
+    packet = inb(KEY_PORT);
     // Discard entire packet if wrong
     if ( (packet & GET_SECOND) == GET_SECOND || ( packet & GET_FIRST ) == GET_FIRST || (packet & GET_FIFTH) == 0)
     {
         send_eoi(MOUSE_IRQ);
         return;
     }
-    // register uint32_t esp asm("esp");
-    // printf("%x ",esp);
-
-
-
 
     y_sign = (packet & GET_THIRD);
     x_sign = (packet & GET_FOURTH);
@@ -190,14 +204,13 @@ void mouse_handler()
         set_background_green(mouse_x, mouse_y);
         set_background_black(previous_x, previous_y);
     }
-    // set_background_black(previous_x,previous_y);
+
+
     previous_x = mouse_x;
     previous_y = mouse_y;
 
-    // if ( l_button == GET_LAST ) {
-    //     set_background_black(mouse_x,mouse_y);
-    //     terminal_switch(0);
-    // }
+    if ( l_button == GET_LAST )
+        terminal_switch(0);
 
     send_eoi(MOUSE_IRQ);
 

@@ -122,19 +122,6 @@ int32_t terminal_write(int32_t fd, const void *buf, int32_t nbytes)
   int i;
   char *charbuf = (char *)buf;
 
-  /*
-  if(cur_tid == running_tid)
-  {
-    for (i = 0; i < nbytes; i++)
-      putc(charbuf[i]);
-  }
-  else
-  {
-    for (i = 0; i < nbytes; i++)
-      terminal_putc(charbuf[i],running_tid);
-  }
-  */
-
   for(i = 0; i < nbytes; i++)
   {
     if(cur_tid == running_tid)
@@ -240,8 +227,6 @@ void terminal_switch(int32_t new_tid)
   if (cur_tid == new_tid)
     return;
 
-  
-  pcb_t* cur_pcb = get_pcb(cur_pid);
   termin_t* cur_term = get_terminal(cur_tid);
   termin_t* new_term = get_terminal(new_tid);
 
