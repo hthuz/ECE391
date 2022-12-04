@@ -12,93 +12,98 @@ int32_t previous_y = 0;
 // int32_t turn_term_flag=1;
 
 
-
-uint8_t read_mouse_port(){
+uint8_t read_mouse_port()
+{
     uint8_t data;
     wait_input();
     data = inb(MOUSE_PORT);
     return data;
 }
 
-uint8_t read_keyboard_port(){
+uint8_t read_keyboard_port()
+{
     uint8_t data;
-    wait_input();
+    // wait_input();
     data = inb(KEY_PORT);
     return data;
 }
 
-void write_mouse_port(uint8_t data){
+void write_mouse_port(uint8_t data)
+{
     wait_output();
-    outb(data,MOUSE_PORT);
+    outb(data, MOUSE_PORT);
 }
 
-void write_keyboard_port(uint8_t data){
+void write_keyboard_port(uint8_t data)
+{
     wait_output();
-    outb(data,KEY_PORT);
+    outb(data, KEY_PORT);
 }
 
-
-void send_command(uint8_t command){
+void send_command(uint8_t command)
+{
     wait_output();
-    outb(0xd4,MOUSE_PORT);
+    outb(0xd4, MOUSE_PORT);
 
     wait_output();
-    outb(command,KEY_PORT);
-
+    outb(command, KEY_PORT);
 }
-/* 
+/*
  *  wait_port()
- *  DESCRIPTION: All output to port 0x60 or 0x64 
- *              must be preceded by waiting for bit 1 (value=2) 
- *              of port 0x64 to become clear. Similarly, 
- *              bytes cannot be read from port 0x60 until 
- *              bit 0 (value=1) of port 0x64 is set. 
+ *  DESCRIPTION: All output to port 0x60 or 0x64
+ *              must be preceded by waiting for bit 1 (value=2)
+ *              of port 0x64 to become clear. Similarly,
+ *              bytes cannot be read from port 0x60 until
+ *              bit 0 (value=1) of port 0x64 is set.
  *              See PS2 Keyboard for further details.
  *  INPUTS: none
  *  OUTPUTS: none
  *  RETURN VALUE: none
- *  SIDE EFFECTS: 
+ *  SIDE EFFECTS:
  */
-void wait_input(){
-    while(1){
+void wait_input()
+{
+    while (1)
+    {
         // for bit 1
-        if ( (inb(MOUSE_PORT)& 0x01) !=0 ) break;
+        if (( inb(MOUSE_PORT) & 0x01) != 0)
+            break;
     }
-
 }
 
-
-/* 
+/*
  *  wait_port()
- *  DESCRIPTION: All output to port 0x60 or 0x64 
- *              must be preceded by waiting for bit 1 (value=2) 
- *              of port 0x64 to become clear. Similarly, 
- *              bytes cannot be read from port 0x60 until 
- *              bit 0 (value=1) of port 0x64 is set. 
+ *  DESCRIPTION: All output to port 0x60 or 0x64
+ *              must be preceded by waiting for bit 1 (value=2)
+ *              of port 0x64 to become clear. Similarly,
+ *              bytes cannot be read from port 0x60 until
+ *              bit 0 (value=1) of port 0x64 is set.
  *              See PS2 Keyboard for further details.
  *  INPUTS: none
  *  OUTPUTS: none
  *  RETURN VALUE: none
- *  SIDE EFFECTS: 
+ *  SIDE EFFECTS:
  */
-void wait_output(){
-    while(1){
+void wait_output()
+{
+    while (1)
+    {
         // for bit 2
-        if ((inb(MOUSE_PORT)& 0x02)!=1) break;
+        if ((inb(MOUSE_PORT) & 0x02) != 1)
+            break;
     }
-
 }
 
-
-/* 
+/*
  *  mouse_init()
  *  DESCRIPTION: init_mouse
  *  INPUTS: none
  *  OUTPUTS: none
  *  RETURN VALUE: none
- *  SIDE EFFECTS: 
+ *  SIDE EFFECTS:
  */
-void mouse_init(){
+void mouse_init()
+{
 
     send_command(RESET_CMD);
 
@@ -114,7 +119,6 @@ void mouse_init(){
     // Clear bit 5 to disable Mouse Clock
     status &= (~0x20);
 
-
     // Send "Set Compaq Status"
     write_mouse_port(KEY_PORT);
     write_keyboard_port(status);
@@ -122,66 +126,80 @@ void mouse_init(){
     // Enable Packet Streaming
     send_command(ENABLE_PACKET_STREM_CMD);
     // Acknowledge packet streaming
-    while(inb(KEY_PORT) != 0xFA);
+    while (inb(KEY_PORT) != 0xFA);
 
-
-    set_background_green(mouse_x,mouse_y);
+    set_background_green(mouse_x, mouse_y);
     // Enable IRQ12
     enable_irq(MOUSE_IRQ);
 }
 
+void mouse_handler()
+{
+
+    uint8_t packet;
+    int8_t x_move;
+    int8_t y_move;
+    uint8_t x_sign;
+    uint8_t y_sign;
+    uint8_t l_button;
+
+    packet = read_keyboard_port();
+    // Discard entire packet if wrong
+    if ( (packet & GET_SECOND) == GET_SECOND || ( packet & GET_FIRST ) == GET_FIRST || (packet & GET_FIFTH) == 0)
+    {
+        send_eoi(MOUSE_IRQ);
+        return;
+    }
+    // register uint32_t esp asm("esp");
+    // printf("%x ",esp);
 
 
-void mouse_handler(){
-    // printf("call handler\n");
-    send_eoi(MOUSE_IRQ);
 
-    int32_t x_move,y_move;
-    uint8_t packet = read_keyboard_port();
-    uint8_t y_over = ( packet & GET_FIRST) ;
-    uint8_t x_over = ( packet & GET_SECOND) ;
-    uint8_t y_sign = ( packet & GET_THIRD) ;
-    uint8_t x_sign = ( packet & GET_FOURTH) ;
-    uint8_t al_one = ( packet & GET_FIFTH) ;
-    // uint8_t m_button = ( packet & GET_SIXTH) ;
-    // uint8_t r_button = ( packet & GET_SEVENTH) ;
-    uint8_t l_button = ( packet & GET_LAST) ;
 
-    if ( x_over == GET_SECOND || y_over == GET_FIRST || al_one == 0)  return;
+    y_sign = (packet & GET_THIRD);
+    x_sign = (packet & GET_FOURTH);
+    l_button = (packet & GET_LAST);
 
     x_move = read_keyboard_port();
-    x_move = ( x_move - (x_sign<<4)) ;  //magic number to get x_sign
+    x_move = (x_move - (x_sign << 4)); // magic number to get x_sign
 
     y_move = read_keyboard_port();
-    y_move = ( y_move - (y_sign<<3)) ;  // magic number to get y_sign
-    y_move = -y_move;       // the y_move is different from convention
+    y_move = (y_move - (y_sign << 3)); // magic number to get y_sign
+    y_move = -y_move;                  // the y_move is different from convention
 
     // slow down the rate of the "cursor"
-    x_move=x_move/SLOW_RATE;
-    y_move=y_move/SLOW_RATE;
+    x_move = x_move / SLOW_RATE;
+    y_move = y_move / SLOW_RATE;
 
-    if( x_move + mouse_x < 0) mouse_x = 0;
-    else if ( x_move + mouse_x >= WIDTH) mouse_x = WIDTH-1;
-    else  mouse_x = mouse_x + x_move;
+    if (x_move + mouse_x < 0)
+        mouse_x = 0;
+    else if (x_move + mouse_x >= WIDTH)
+        mouse_x = WIDTH - 1;
+    else
+        mouse_x = mouse_x + x_move;
 
-    if( y_move + mouse_y < 0) mouse_y = 0;
-    else if ( y_move + mouse_y >= HEIGHT) mouse_y = HEIGHT-1;
-    else  mouse_y = mouse_y + y_move;
+    if (y_move + mouse_y < 0)
+        mouse_y = 0;
+    else if (y_move + mouse_y >= HEIGHT)
+        mouse_y = HEIGHT - 1;
+    else
+        mouse_y = mouse_y + y_move;
 
-    if ( mouse_x!=previous_x || mouse_y!= previous_y){
-        set_background_green(mouse_x,mouse_y);
-        set_background_black(previous_x,previous_y);
+    if (mouse_x != previous_x || mouse_y != previous_y)
+    {
+        set_background_green(mouse_x, mouse_y);
+        set_background_black(previous_x, previous_y);
     }
     // set_background_black(previous_x,previous_y);
     previous_x = mouse_x;
     previous_y = mouse_y;
 
-    if ( l_button == GET_LAST ) {
-        set_background_black(mouse_x,mouse_y);
-        terminal_switch(0);
-    }
+    // if ( l_button == GET_LAST ) {
+    //     set_background_black(mouse_x,mouse_y);
+    //     terminal_switch(0);
+    // }
 
+    send_eoi(MOUSE_IRQ);
+
+    return;
 }
-
-
-

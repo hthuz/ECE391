@@ -171,6 +171,8 @@ void entry(unsigned long magic, unsigned long addr) {
 	
     // initialize mouse
     mouse_init();
+    
+    optable_init();	
 	// Enalbe interrupt
     sti();
 
@@ -180,7 +182,7 @@ void entry(unsigned long magic, unsigned long addr) {
     // launch_tests();
 #endif
     /* Execute the first program ("shell") ... */
-	optable_init();	
+
 	printf("TERMINAL #%d\n",cur_tid);
 	execute((uint8_t*)"shell");
 
