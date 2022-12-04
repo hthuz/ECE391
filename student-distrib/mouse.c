@@ -11,7 +11,14 @@ int32_t mouse_y = 12;
 int32_t previous_x = 40;
 int32_t previous_y = 12;
 
-
+/*
+ * read_mouse_port
+ *   DESCRIPTION: wait and read byte from mouse port
+ *   INPUTS: none
+ *   OUTPTUS: none
+ *   RETURN VALUE: the byte read
+ *   SIDE EFFECTS: none
+ */ 
 uint8_t read_mouse_port()
 {
     uint8_t data;
@@ -20,6 +27,14 @@ uint8_t read_mouse_port()
     return data;
 }
 
+/*
+ * read_keyboard_port
+ *   DESCRIPTION: wait and read byte from keyboard port
+ *   INPUTS: none
+ *   OUTPTUS: none
+ *   RETURN VALUE: the byte read
+ *   SIDE EFFECTS: none
+ */ 
 uint8_t read_keyboard_port()
 {
     uint8_t data;
@@ -28,18 +43,42 @@ uint8_t read_keyboard_port()
     return data;
 }
 
+/*
+ * write_mouse_port
+ *   DESCRIPTION: wait and write byte to mouse port
+ *   INPUTS: data -- byte to write to mouse
+ *   OUTPUTS: none
+ *   RETURN VALUE: none
+ *   SIDE EFFECTS: none
+ */
 void write_mouse_port(uint8_t data)
 {
     wait_output();
     outb(data, MOUSE_PORT);
 }
 
+/*
+ * write_keyboard_port
+ *   DESCRIPTION: wait and write byte to keyboard port
+ *   INPUTS: data -- byte to write to keyboard
+ *   OUTPUTS: none
+ *   RETURN VALUE: none 
+ *   SIDE EFFECTS: none
+ */
 void write_keyboard_port(uint8_t data)
 {
     wait_output();
     outb(data, KEY_PORT);
 }
 
+/*
+ * send_command
+ *   DESCRIPTION: send command to mouse
+ *   INPUTS: command -- command to write to mouse
+ *   OUTPTUS: none 
+ *   RETURN VALUE: none
+ *   SIDE EFFECTS: none
+ */
 void send_command(uint8_t command)
 {
     wait_output();
@@ -48,18 +87,16 @@ void send_command(uint8_t command)
     wait_output();
     outb(command, KEY_PORT);
 }
+
 /*
  *  wait_port()
- *  DESCRIPTION: All output to port 0x60 or 0x64
- *              must be preceded by waiting for bit 1 (value=2)
- *              of port 0x64 to become clear. Similarly,
- *              bytes cannot be read from port 0x60 until
- *              bit 0 (value=1) of port 0x64 is set.
- *              See PS2 Keyboard for further details.
+ *  DESCRIPTION: bytes cannot be read from port 0x60 until
+ *               bit 0 (value=1) of port 0x64 is set.
+ *               See PS2 Keyboard for further details.
  *  INPUTS: none
  *  OUTPUTS: none
  *  RETURN VALUE: none
- *  SIDE EFFECTS:
+ *  SIDE EFFECTS: none
  */
 void wait_input()
 {
@@ -74,15 +111,12 @@ void wait_input()
 /*
  *  wait_port()
  *  DESCRIPTION: All output to port 0x60 or 0x64
- *              must be preceded by waiting for bit 1 (value=2)
- *              of port 0x64 to become clear. Similarly,
- *              bytes cannot be read from port 0x60 until
- *              bit 0 (value=1) of port 0x64 is set.
- *              See PS2 Keyboard for further details.
+ *               must be preceded by waiting for bit 1 (value=2)
+ *               of port 0x64 to become clear. 
  *  INPUTS: none
  *  OUTPUTS: none
  *  RETURN VALUE: none
- *  SIDE EFFECTS:
+ *  SIDE EFFECTS: none
  */
 void wait_output()
 {
@@ -134,6 +168,16 @@ void mouse_init()
     // Enable IRQ12
     enable_irq(MOUSE_IRQ);
 }
+
+/*
+ * mouse_handler 
+ *   DESCRIPTION: handler function for mouse. i.e. read input from mouse
+ *                and draw on the screen
+ *   INPUTS: none
+ *   OUTPUTS: none
+ *   RETURN VALUE: none
+ *   SIDE EFFECTS: none
+ * */
 
 void mouse_handler()
 {
