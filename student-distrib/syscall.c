@@ -38,7 +38,6 @@ int32_t halt(uint8_t status)
 
   int i;
   pcb_t *cur_pcb = get_pcb(cur_pid);
-  pcb_t* parent_pcb = get_pcb(cur_pcb->parent_pid);
   termin_t* running_term = get_terminal(running_tid);
 
 
@@ -81,8 +80,8 @@ int32_t halt(uint8_t status)
   running_term->pid = cur_pid;
 
   // Jump to execute return
-  uint32_t my_esp = parent_pcb->saved_esp;
-  uint32_t my_ebp = parent_pcb->saved_ebp;
+  uint32_t my_esp = cur_pcb->saved_esp;
+  uint32_t my_ebp = cur_pcb->saved_ebp;
   uint32_t result = (uint32_t)status;
   sti();
   asm volatile(
@@ -117,6 +116,7 @@ int32_t execute(const uint8_t *command)
   uint8_t usr_cmd[ARG_LEN];
   uint8_t usr_args[ARG_LEN];
   termin_t* cur_term = get_terminal(cur_tid);
+  termin_t* cur_running_term = get_terminal(running_tid);
 
 
   if(parse_args(command, usr_cmd, usr_args) == -1)
@@ -143,12 +143,13 @@ int32_t execute(const uint8_t *command)
   {
     parent_pid = ROOT_PID;
     term_switch_flag = 0;
-
-    pcb_t* cur_pcb = get_pcb(cur_pid);
+    
+    // Need to store inital ebp and esp
+    // for now running terminal hasn't been changed yet
     register uint32_t saved_ebp asm("ebp");
     register uint32_t saved_esp asm("esp");
-    cur_pcb->saved_ebp = saved_ebp;
-    cur_pcb->saved_esp = saved_esp;
+    cur_running_term->saved_ebp = saved_ebp;
+    cur_running_term->saved_esp = saved_esp;
   }
   else
   {
@@ -632,16 +633,8 @@ pcb_t* create_pcb(int32_t pid, int32_t parent_pid,  uint8_t* usr_args)
   // Store EBP and ESP
   register uint32_t saved_ebp asm("ebp");
   register uint32_t saved_esp asm("esp");
-  if(parent_pid == -1)
-  {
-    pcb->saved_ebp = saved_ebp;
-    pcb->saved_esp = saved_esp;
-  }else
-  {
-    pcb_t* parent_pcb = get_pcb(pcb->parent_pid);
-    parent_pcb->saved_ebp = saved_ebp;
-    parent_pcb->saved_esp = saved_esp;
-  }
+  pcb->saved_ebp = saved_ebp;
+  pcb->saved_esp = saved_esp;
 
   return pcb;
 }

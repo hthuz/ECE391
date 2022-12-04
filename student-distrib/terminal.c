@@ -183,6 +183,9 @@ void terminal_init()
     // RTC 
     terminals[tid].rtc_freq = 0;
     terminals[tid].rtc_counter = 0;
+    terminals[tid].saved_ebp = 0;
+    terminals[tid].saved_esp = 0;
+
   }    
   flush_tlb();
 
@@ -259,10 +262,14 @@ void terminal_switch(int32_t new_tid)
   // Start new shell if it's not invoked
   if(new_term->invoked == 0)
   {
-
-    new_term->invoked = 1;
-    term_num++;
     term_switch_flag = 1;
+    new_term->invoked = 1;
+    // After term_num is increased, scheduling may take place
+    // But new process is not created yet
+    // Disble interrupt for now (enabled again in execute)
+    cli();
+    term_num++;
+
 
     printf("TERMINAL #%d\n",cur_tid);
     execute((uint8_t *)"shell");

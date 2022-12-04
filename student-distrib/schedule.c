@@ -80,13 +80,14 @@ void pit_handler()
 void task_switch()
 {
 
+
   // if only one terminal, no need to switch
   if(term_num == 1)
     return;
 
   cli();
   termin_t* curr_running_term;
-  termin_t* next_term;
+  termin_t* next_running_term;
   int32_t next_pid;
   pcb_t* cur_pcb;
   pcb_t* next_pcb;
@@ -98,8 +99,8 @@ void task_switch()
   // After this function, running_tid is changed
   set_running_terminal();
 
-  next_term = get_terminal(running_tid);
-  next_pid = next_term->pid;
+  next_running_term = get_terminal(running_tid);
+  next_pid = next_running_term->pid;
 
   next_pcb = get_pcb(next_pid);
 
@@ -117,17 +118,17 @@ void task_switch()
   cur_pid = next_pid;
 
 
-  // Store cur_pid's EBP,ESP
+  // Store current task's EBP,ESP
   register uint32_t saved_ebp asm("ebp");
   register uint32_t saved_esp asm("esp"); 
-  cur_pcb->saved_ebp = saved_ebp;
-  cur_pcb->saved_esp = saved_esp;
+  curr_running_term->saved_ebp = saved_ebp;
+  curr_running_term->saved_esp = saved_esp;
 
 
   // Context switch
   // Use next task's EBP,ESP
-  uint32_t next_ebp = next_pcb->saved_ebp;
-  uint32_t next_esp = next_pcb->saved_esp;
+  uint32_t next_ebp = next_running_term->saved_ebp;
+  uint32_t next_esp = next_running_term->saved_esp;
     asm volatile(
         "movl %0, %%esp;"
         "movl %1, %%ebp;"

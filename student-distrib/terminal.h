@@ -25,6 +25,8 @@ struct termin_t
   int enter_pressed;
   int rtc_counter;
   int rtc_freq;
+  uint32_t saved_ebp;
+  uint32_t saved_esp;   // Used for scheduling
 
 };
 
