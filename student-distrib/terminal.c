@@ -124,6 +124,8 @@ int32_t terminal_write(int32_t fd, const void *buf, int32_t nbytes)
 
   for(i = 0; i < nbytes; i++)
   {
+    if(charbuf[i]=='\0')
+      continue;
     if(cur_tid == running_tid)
       putc(charbuf[i]);
     else

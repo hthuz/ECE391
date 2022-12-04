@@ -245,7 +245,7 @@ int32_t open(const uint8_t *filename)
   // check if the filename is exist by read_dentry_by_name function
   if (read_dentry_by_name(filename, &curr_dentry) == -1)
   {
-    printf("we cannot find such file");
+    // printf("we cannot find such file");
     return SYSCALL_FAIL;
   }
   // find the table which is not using
