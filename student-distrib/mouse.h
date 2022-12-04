@@ -23,7 +23,10 @@
 #define GET_SEVENTH 0x02
 #define GET_LAST    0x01
 
-
+extern int32_t mouse_x;
+extern int32_t mouse_y;
+extern int32_t previous_x;
+extern int32_t previous_y;
 // initilize the mouse
 void mouse_init();
 

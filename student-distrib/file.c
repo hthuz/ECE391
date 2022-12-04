@@ -397,6 +397,10 @@ int32_t directory_read(int32_t fd, void *buf, int32_t nbytes)
     uint32_t helloinode;
     uint32_t filelength;
     uint8_t *ret_buf = (uint8_t *)buf;
+    for (i = 0; i <= NameLen; i++)
+    {
+        ret_buf[i] = '\0';
+    }
     read_dentry_by_index(dir_file_read, &dentry_test);
     helloinode = dentry_test.inode;
     test_node = (nodes_block *)(mynode + helloinode);
@@ -407,9 +411,12 @@ int32_t directory_read(int32_t fd, void *buf, int32_t nbytes)
         ret_buf[i] = dentry_test.filename[i];
     }
     dir_file_read++;
+    // printf("dir_file_read is: %d    ",dir_file_read);
+    // printf("%d    ",strlen((int8_t*) ret_buf));
     if (dir_file_read == myboot->num_dir_entries)
         return 0; // come to the end
     return strlen((int8_t*) ret_buf);
+    // return nbytes;
 }
 
 // useless functions
