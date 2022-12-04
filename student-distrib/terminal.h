@@ -23,7 +23,6 @@ struct termin_t
   unsigned char kb_buf[KB_BUF_SIZE];
   int kb_buf_length;
   int enter_pressed;
-  int rtc_interrupt;
   int rtc_counter;
   int rtc_freq;
 

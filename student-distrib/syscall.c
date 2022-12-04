@@ -84,6 +84,7 @@ int32_t halt(uint8_t status)
   uint32_t my_esp = parent_pcb->saved_esp;
   uint32_t my_ebp = parent_pcb->saved_ebp;
   uint32_t result = (uint32_t)status;
+  sti();
   asm volatile(
       "movl %%ebx, %%ebp    ;"
       "movl %%ecx, %%esp    ;"
@@ -93,7 +94,6 @@ int32_t halt(uint8_t status)
       :
       : "c"(my_esp), "b"(my_ebp), "d"(result)
       : "eax", "ebp", "esp");
-  sti();
   return 0;
 }
 

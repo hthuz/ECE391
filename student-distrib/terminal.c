@@ -181,7 +181,6 @@ void terminal_init()
     terminals[tid].enter_pressed = 0;
 
     // RTC 
-    terminals[tid].rtc_interrupt = 0;
     terminals[tid].rtc_freq = 0;
     terminals[tid].rtc_counter = 0;
   }    
