@@ -94,12 +94,11 @@ int32_t send_signal( uint32_t signum ){
         termin_t showing_terminal = terminals[cur_tid];
         int32_t showing_pid = showing_terminal.pid;
 
-
         pcb_t *showing_pcb = get_pcb(showing_pid);
         (showing_pcb->the_signal).sigpending[signum]=1;
 
-        termin_t* running_term = get_terminal(running_tid);
-        running_term->enter_pressed = 1;
+        termin_t* cur_term = get_terminal(cur_tid);
+        cur_term->enter_pressed = 1;
 
         printf("pcb sigpending has been changed\n");
     }
