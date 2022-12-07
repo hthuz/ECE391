@@ -32,7 +32,7 @@ optable_t dir_optable;
  *   RETURN VALUE: none
  *   SIDE EFFECTS: none
  */
-int32_t halt(uint8_t status)
+int32_t halt(uint32_t status)
 {
   cli();
 
@@ -171,7 +171,40 @@ int32_t execute(const uint8_t *command)
 
   set_process_paging(cur_pid);
 
-  pcb = create_pcb(cur_pid,parent_pid, usr_args);
+  // pcb = create_pcb(cur_pid,parent_pid, usr_args);
+    int i;
+
+  pcb = get_pcb(cur_pid);
+  pcb->pid = cur_pid;
+  pcb->parent_pid = parent_pid;
+
+  for(i = 0; i < ARG_LEN; i++)
+    pcb->args[i] = '\0';
+  if (strlen((const int8_t*)usr_args) > 0)
+  {
+    for (i = 0; i <= strlen((const int8_t*)usr_args); i++)
+      pcb->args[i] = usr_args[i];
+  }
+  pcb->use_vid = 0;
+
+  // Initialize File array
+  for (i = 0; i < FARRAY_SIZE; i++)
+  {
+    pcb->farray[i].flags = 0;
+  }
+  // File array for stdin
+  pcb->farray[0].optable_ptr = &stdin_optable;
+  pcb->farray[0].flags = 1;
+
+  // File array for stdout
+  pcb->farray[1].optable_ptr = &stdout_optable;
+  pcb->farray[1].flags = 1;
+
+  // Store EBP and ESP
+  register uint32_t saved_ebp asm("ebp");
+  register uint32_t saved_esp asm("esp");
+  pcb->saved_ebp = saved_ebp;
+  pcb->saved_esp = saved_esp;
 
   context_switch(usr_cmd);
 
