@@ -55,6 +55,18 @@ typedef struct fentry_t
   int32_t flags;
 } fentry_t;
 
+
+typedef uint32_t sigset_t;
+typedef int32_t (*sighandler_t)(void);   
+typedef struct signal_info {
+    int32_t sigpending[5];
+    int32_t blocked[5];
+    sigset_t pre_blocked[5];
+    sighandler_t sighand[5]; 
+    uint32_t alarm_time; 
+ } signal_info;
+
+ 
 // Process Control Block structure
 typedef struct pcb_t
 {
@@ -65,10 +77,11 @@ typedef struct pcb_t
   uint32_t saved_ebp;
   uint8_t args[ARG_LEN];
   uint32_t use_vid;
+  signal_info the_signal;
 } pcb_t;
 
 // System call functions
-int32_t halt(uint8_t status);
+int32_t halt(uint32_t status);
 int32_t execute(const uint8_t *command);
 int32_t read(int32_t fd, void *buf, int32_t nbytes);
 int32_t write(int32_t fd, const void *buf, int32_t nbytes);

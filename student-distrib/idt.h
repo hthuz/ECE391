@@ -10,8 +10,28 @@
 #define MOUSE_VEC  0x2c
 #define SYS_CALL_VEC  0x80
 
-void idt_exception_init();
+typedef struct switch_para {
+    int32_t rebx;  
+    int32_t recx;
+    int32_t redx;  
+    int32_t resi;
+    int32_t redi;
+    int32_t rebp;   
+    int32_t reax;
+    int32_t rds;  
+    int32_t res;
+    int32_t rfs;  
+    int32_t irq;
+    int32_t err_code;  
+    int32_t ret_add;
+    int32_t rcs;       
+    int32_t reflags;
+    int32_t resp;  
+    int32_t rss;
+} switch_para;
 
+
+void idt_exception_init();
 
 extern void idt_fill(); //used to initilize idt
 void idt_0();   //divide_error

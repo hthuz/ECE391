@@ -18,6 +18,7 @@
 #include "terminal.h"
 #include "schedule.h"
 #include "mouse.h"
+#include "signal.h"
 // #define RUN_TESTS
 
 /* Macros. */
@@ -166,6 +167,9 @@ void entry(unsigned long magic, unsigned long addr) {
 	// Initialize Paging
     paging_init();
 
+    // initialize signal default function
+    init_default();
+    
 	// Initialize terminal
 	terminal_init();
 	

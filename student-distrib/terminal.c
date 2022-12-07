@@ -62,10 +62,22 @@ int32_t terminal_read(int32_t fd, void *buf, int32_t nbytes)
     if (buf == NULL)
         return SYSCALL_FAIL;
     termin_t* running_term = get_terminal(running_tid);
-
+    // pcb_t *cur_pcb = get_pcb(cur_pid);
+    // int32_t signum=0;
     // do nothing until enter is pressed
-    while (running_term->enter_pressed == 0);
-    cli();
+    while (running_term->enter_pressed == 0){
+    //     while ( 
+    //         (
+    //             (cur_pcb->the_signal).blocked[signum] == 1 || (cur_pcb->the_signal).sigpending[signum]==0
+    //         )&& (signum<=4)     
+    //       ) {
+    //       signum++;
+    //     }
+
+    //     if (signum=5){
+          
+    // }
+    };
     int i;
     int j;
     char* charbuf = buf;
@@ -95,7 +107,6 @@ int32_t terminal_read(int32_t fd, void *buf, int32_t nbytes)
         running_term->kb_buf[j] = '\0';
     running_term->kb_buf_length = 0;
     running_term->enter_pressed = 0;
-    sti();
 
     return i ;
 }

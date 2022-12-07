@@ -7,6 +7,7 @@
 #include "terminal.h"
 #include "rtc.h"
 #include "x86_desc.h"
+#include "signal.h"
 
 #define SYSCALL_FAIL -1;
 
@@ -163,6 +164,8 @@ int32_t execute(const uint8_t *command)
 
   // Change to new process
   cur_pid = new_pid;
+
+  init_process_signal(get_pcb(cur_pid));
 
   // Update the process running in current terminal
   cur_term->pid = cur_pid;
