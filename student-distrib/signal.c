@@ -4,7 +4,7 @@
 #include "terminal.h"
 
 sighandler_t default_handle[5];
-extern void user_handler_helper(int32_t signum, sighandler_t  handler , switch_para *hw_context_addr);
+
 
 // -------------------------------initilize the process--------------------------//
 int32_t init_process_signal( pcb_t* the_pcb){
@@ -67,9 +67,9 @@ int32_t user1_handler(){
 // ----------------------------specify the action of signal, to replace default for cur_process--------------------------//
 int32_t set_signal(int signum, sighandler_t action){
     int32_t fl;
-    termin_t showing_terminal = terminals[cur_tid];
-    int32_t showing_pid = showing_terminal.pid;
-    pcb_t *cur_pcb = get_pcb(showing_pid);
+    // termin_t showing_terminal = terminals[cur_tid];
+    // int32_t showing_pid = showing_terminal.pid;
+    pcb_t *cur_pcb = get_pcb(cur_pid);
     if (signum<0 || signum>4 || action==NULL)
         return -1;
     // sighandler_t pre_action = cur_pcb->the_signal->sighand[signum];
@@ -84,8 +84,6 @@ int32_t set_signal(int signum, sighandler_t action){
 // ----------------------------deliver signal to process--------------------------//
 int32_t send_signal( uint32_t signum ){
     int32_t flag;
-    termin_t showing_terminal = terminals[cur_tid];
-    int32_t showing_pid = showing_terminal.pid;
 
     if (signum<0 || signum>4){
         printf("send_signal wrong");
@@ -93,6 +91,9 @@ int32_t send_signal( uint32_t signum ){
     }
     cli_and_save(flag);
     if (signum<=3 && signum>=2){
+        termin_t showing_terminal = terminals[cur_tid];
+        int32_t showing_pid = showing_terminal.pid;
+
 
         pcb_t *showing_pcb = get_pcb(showing_pid);
         (showing_pcb->the_signal).sigpending[signum]=1;
@@ -103,9 +104,7 @@ int32_t send_signal( uint32_t signum ){
         printf("pcb sigpending has been changed\n");
     }
     else {
-        int32_t run_pid = terminals[running_tid].pid;
-
-        pcb_t *run_pcb = get_pcb(run_pid);
+        pcb_t *run_pcb = get_pcb(cur_pid);
         (run_pcb->the_signal).sigpending[signum]=1;
     }
     
@@ -117,12 +116,12 @@ int32_t send_signal( uint32_t signum ){
 // -------------after deliver the signal, mask other signals--------------//
 int32_t mask_signal(int32_t signum){
     int32_t flag;
-    termin_t showing_terminal = terminals[cur_tid];
-    int32_t showing_pid = showing_terminal.pid;
+    // termin_t showing_terminal = terminals[cur_tid];
+    // int32_t showing_pid = showing_terminal.pid;
     if (signum<0 || signum>4)
         return -1;
     cli_and_save(flag);
-    pcb_t *cur_pcb = get_pcb(showing_pid);
+    pcb_t *cur_pcb = get_pcb(cur_pid);
     (cur_pcb-> the_signal). blocked [signum] = 1; 
     restore_flags(flag);
     return 0;
@@ -131,13 +130,13 @@ int32_t mask_signal(int32_t signum){
 
 int32_t unmask_signal(int32_t signum){
     int32_t flag;
-    termin_t showing_terminal = terminals[cur_tid];
-    int32_t showing_pid = showing_terminal.pid;
+    // termin_t showing_terminal = terminals[cur_tid];
+    // int32_t showing_pid = showing_terminal.pid;
     if (signum<0 || signum>4)
         return -1;
     cli_and_save(flag);
 
-    pcb_t *cur_pcb = get_pcb(showing_pid);
+    pcb_t *cur_pcb = get_pcb(cur_pid);
     (cur_pcb-> the_signal). blocked [signum] = 0; 
     restore_flags(flag);
     return 0;
@@ -152,10 +151,10 @@ asmlinkage void tackle_signal(switch_para hard_context){
     int32_t fl;
     int32_t signum=0;
     int32_t i;
-    termin_t showing_terminal = terminals[cur_tid];
-    int32_t showing_pid = showing_terminal.pid;
+    // termin_t showing_terminal = terminals[cur_tid];
+    // int32_t showing_pid = showing_terminal.pid;
 
-    pcb_t *cur_pcb = get_pcb(showing_pid);
+    pcb_t *cur_pcb = get_pcb(cur_pid);
     if (hard_context.rcs != USER_CS)
         return;
     cli_and_save(fl);
@@ -203,11 +202,11 @@ void restore_block(){
     int32_t i;
     int32_t flag;
 
-    termin_t showing_terminal = terminals[cur_tid];
-    int32_t showing_pid = showing_terminal.pid;
+    // termin_t showing_terminal = terminals[cur_tid];
+    // int32_t showing_pid = showing_terminal.pid;
 
     cli_and_save(flag);
-    pcb_t *cur_pcb = get_pcb(showing_pid);
+    pcb_t *cur_pcb = get_pcb(cur_pid);
     for( i=0;i<=4;i++){
         (cur_pcb->the_signal).blocked[i] = (cur_pcb->the_signal).pre_blocked[i];
     }
