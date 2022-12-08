@@ -76,6 +76,7 @@ typedef struct pcb_t
   uint32_t saved_esp;
   uint32_t saved_ebp;
   uint8_t args[ARG_LEN];
+  uint8_t cmd[ARG_LEN];
   uint32_t use_vid;
   signal_info the_signal;
 } pcb_t;

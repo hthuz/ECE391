@@ -33,6 +33,7 @@ typedef struct switch_para {
 
 void idt_exception_init();
 
+extern void exception_shower(switch_para hw);
 extern void idt_fill(); //used to initilize idt
 void idt_0();   //divide_error
 void idt_1();   //debug

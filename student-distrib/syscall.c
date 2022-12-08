@@ -39,25 +39,24 @@ int32_t halt(uint32_t status)
 
   int fd;
   pcb_t *cur_pcb = get_pcb(cur_pid);
-  termin_t* running_term = get_terminal(running_tid);
-
+  termin_t *running_term = get_terminal(running_tid);
 
   // Restore parent data
   // if it is the original shell
-  if(cur_pcb->parent_pid == -1)
+  if (cur_pcb->parent_pid == -1)
   {
     printf("Can't Exit Base Shell\n");
     cur_pid = ROOT_PID;
     running_tasks[cur_pcb->pid] = 0;
     task_num--;
+    running_term->num_tasks--;
     execute((uint8_t *)"shell");
   }
-
 
   // Close any relevant FDs
   for (fd = 0; fd < FARRAY_SIZE; fd++)
   {
-    if(cur_pcb->farray[fd].flags != 0)
+    if (cur_pcb->farray[fd].flags != 0)
       close(fd);
   }
 
@@ -67,12 +66,10 @@ int32_t halt(uint32_t status)
 
   cur_pid = cur_pcb->parent_pid;
 
-
   tss.ss0 = KERNEL_DS;
   tss.esp0 = K_BASE - cur_pid * K_TASK_STACK_SIZE - sizeof(int32_t);
   // Restore parent paging
   set_process_paging(cur_pid); // flushing TLB has been contained.
-
 
   // close the relevant video memory
   if (cur_pcb->use_vid == 1)
@@ -83,6 +80,12 @@ int32_t halt(uint32_t status)
 
   // Update terminal information
   running_term->pid = cur_pid;
+  running_term->num_tasks--;
+
+  // if parent is not shell, task running on terminal won't be shell
+  pcb_t* parent_pcb = get_pcb(cur_pid);
+  if(strncmp((int8_t*)parent_pcb->cmd, (int8_t*)"shell", 5) == 0)
+    running_term->task_is_shell = 1;
 
   // Jump to execute return
   uint32_t my_esp = cur_pcb->saved_esp;
@@ -116,40 +119,38 @@ int32_t halt(uint32_t status)
 int32_t execute(const uint8_t *command)
 {
   cli();
-  pcb_t *pcb;               // PCB of program
-  int32_t parent_pid;       // Record of parent id
-  int32_t new_pid;          // new pid for this newly executed program
+  pcb_t *pcb;         // PCB of program
+  int32_t parent_pid; // Record of parent id
+  int32_t new_pid;    // new pid for this newly executed program
   uint8_t usr_cmd[ARG_LEN];
   uint8_t usr_args[ARG_LEN];
-  termin_t* cur_term = get_terminal(cur_tid);
-  termin_t* cur_running_term = get_terminal(running_tid);
+  termin_t *cur_term = get_terminal(cur_tid);
+  termin_t *cur_running_term = get_terminal(running_tid);
 
-
-  if(parse_args(command, usr_cmd, usr_args) == -1)
+  if (parse_args(command, usr_cmd, usr_args) == -1)
   {
     sti();
     return -1;
   }
 
-  if(check_exec(usr_cmd) == -1)
+  if (check_exec(usr_cmd) == -1)
   {
     sti();
     return -1;
   }
 
   // record parentid and current id
-  if(-1 == ( new_pid = create_pid() ))
+  if (-1 == (new_pid = create_pid()))
   {
     sti();
     return -1;
   }
 
-   
-  if(term_switch_flag == 1)
+  if (term_switch_flag == 1)
   {
     parent_pid = ROOT_PID;
     term_switch_flag = 0;
-    
+
     // Need to store inital ebp and esp
     // for now running terminal hasn't been changed yet
     register uint32_t saved_ebp asm("ebp");
@@ -169,26 +170,37 @@ int32_t execute(const uint8_t *command)
 
   // Update the process running in current terminal
   cur_term->pid = cur_pid;
+  cur_term->num_tasks++;
+  cur_term->task_is_shell = 0;
+  if(strncmp((int8_t*)usr_cmd,(int8_t*)"shell",5) == 0)
+    cur_term->task_is_shell = 1;
   // Current terminal should be set to running immediately
   running_tid = cur_tid;
 
   set_process_paging(cur_pid);
 
   // pcb = create_pcb(cur_pid,parent_pid, usr_args);
-    int i;
+  int i;
 
   pcb = get_pcb(cur_pid);
   pcb->pid = cur_pid;
   pcb->parent_pid = parent_pid;
 
-  for(i = 0; i < ARG_LEN; i++)
-    pcb->args[i] = '\0';
-  if (strlen((const int8_t*)usr_args) > 0)
+  for (i = 0; i < ARG_LEN; i++)
   {
-    for (i = 0; i <= strlen((const int8_t*)usr_args); i++)
+    pcb->args[i] = '\0';
+    pcb->cmd[i] = '\0';
+  }
+
+  if (strlen((const int8_t *)usr_args) > 0)
+  {
+    for (i = 0; i <= strlen((const int8_t *)usr_args); i++)
       pcb->args[i] = usr_args[i];
   }
+  for(i = 0; i <= strlen((const int8_t *)usr_cmd); i++)
+    pcb->cmd[i] = usr_cmd[i];
   pcb->use_vid = 0;
+
 
   // Initialize File array
   for (i = 0; i < FARRAY_SIZE; i++)
@@ -393,14 +405,23 @@ int32_t vidmap(uint8_t **screen_start)
 /* To be done */
 int32_t set_handler(int32_t signum, void *handler_address)
 {
-
+  if (set_signal(signum, handler_address) == -1)
+  {
+    printf("invalid address");
+    return -1;
+  }
   return 0;
 }
 
 /* To be done */
 int32_t sigreturn(void)
 {
-
+  // printf("come here");
+  // if (sys_sig_return() == -1)
+  // {
+  //   printf("invalid address");
+  //   return -1;
+  // }
   return 0;
 }
 
@@ -428,7 +449,6 @@ void set_process_paging(int32_t pid)
   p_dir[index].base_addr = (((pid + 2) * P_4M_SIZE) >> 12);
 
   flush_tlb();
-
 }
 
 /*
@@ -459,7 +479,7 @@ void set_vidmap_paging()
 void hide_term_vid_paging(int32_t tid)
 {
   int index = PDE_INDEX(35 * P_4M_SIZE);
-  
+
   // 140MB is the virtual space address of memory
   p_dir[index].present = 1;
   p_dir[index].page_size = 0;
@@ -467,8 +487,8 @@ void hide_term_vid_paging(int32_t tid)
   p_dir[index].base_addr = (((int)video_p_table) >> 12);
 
   video_p_table[0].base_addr = TERM_VID_ADDR(tid) >> 12; // page is 4k aligned,
-                                                    // the address is multiple of 4k
-                                                    // so lower 12 bits not required
+                                                         // the address is multiple of 4k
+                                                         // so lower 12 bits not required
   video_p_table[0].present = 1;
 
   flush_tlb();
@@ -558,18 +578,18 @@ void optable_init()
  *                  0 otherwise
  *   SIDE EFFECTS: results are stored in usr_cmd and usr_args
  */
-int parse_args(const uint8_t *command, uint8_t* usr_cmd, uint8_t* usr_args)
+int parse_args(const uint8_t *command, uint8_t *usr_cmd, uint8_t *usr_args)
 {
   int i;
   uint32_t cmd_len = 0;
   uint32_t args_len = 0;
-  uint32_t command_length = strlen((int8_t*) command);
+  uint32_t command_length = strlen((int8_t *)command);
 
   if (command == NULL)
     return -1;
 
-  // Empty usr_cmd and usr_args first  
-  for(i = 0; i < ARG_LEN; i++)
+  // Empty usr_cmd and usr_args first
+  for (i = 0; i < ARG_LEN; i++)
   {
     usr_cmd[i] = '\0';
     usr_args[i] = '\0';
@@ -593,7 +613,6 @@ int parse_args(const uint8_t *command, uint8_t* usr_cmd, uint8_t* usr_args)
   return 0;
 }
 
-
 /*
  * check_exec
  *   DESCRIPTION: Helper function for execute
@@ -603,8 +622,8 @@ int parse_args(const uint8_t *command, uint8_t* usr_cmd, uint8_t* usr_args)
  *   RETURN VALUE: -1 if user command is invalid/not executable
  *                  0 if valid
  *   SIDE EFFECTS: none
- */ 
-int check_exec(uint8_t* usr_cmd)
+ */
+int check_exec(uint8_t *usr_cmd)
 {
   dentry_t dentry;          // dentry of program file
   nodes_block *inode;       // inode of program file
@@ -623,9 +642,7 @@ int check_exec(uint8_t* usr_cmd)
     return -1;
 
   return 0;
-
 }
-
 
 /*
  * create_pcb
@@ -639,20 +656,20 @@ int check_exec(uint8_t* usr_cmd)
  *   RETURN VALUE: the created pcb
  *   SIDE EFFECTS: none
  */
-pcb_t* create_pcb(int32_t pid, int32_t parent_pid,  uint8_t* usr_args)
+pcb_t *create_pcb(int32_t pid, int32_t parent_pid, uint8_t *usr_args)
 {
   int i;
-  pcb_t* pcb;
+  pcb_t *pcb;
 
   pcb = get_pcb(pid);
   pcb->pid = pid;
   pcb->parent_pid = parent_pid;
 
-  for(i = 0; i < ARG_LEN; i++)
+  for (i = 0; i < ARG_LEN; i++)
     pcb->args[i] = '\0';
-  if (strlen((const int8_t*)usr_args) > 0)
+  if (strlen((const int8_t *)usr_args) > 0)
   {
-    for (i = 0; i <= strlen((const int8_t*)usr_args); i++)
+    for (i = 0; i <= strlen((const int8_t *)usr_args); i++)
       pcb->args[i] = usr_args[i];
   }
   pcb->use_vid = 0;
@@ -679,7 +696,6 @@ pcb_t* create_pcb(int32_t pid, int32_t parent_pid,  uint8_t* usr_args)
   return pcb;
 }
 
-
 /*
  * context_switch
  *   DESCRIPTION: Helper function for execute
@@ -688,20 +704,20 @@ pcb_t* create_pcb(int32_t pid, int32_t parent_pid,  uint8_t* usr_args)
  *   INPUTS: usr_cmd -- name of the program to execute
  *   OUTPUTS: none
  *   RETURN VALUE: none
- *   SIDE EFFECTS: should be used after check_exec 
+ *   SIDE EFFECTS: should be used after check_exec
  *                 as this function doesn't not check anything
  */
-void context_switch(uint8_t* usr_cmd)
+void context_switch(uint8_t *usr_cmd)
 {
   dentry_t dentry;
   nodes_block *inode;       // inode of program file
   uint8_t buf[FHEADER_LEN]; // buf containing bytes of the file
   int32_t entry_pt;         // Entry point into the program (EIP)
-                            
+
   read_dentry_by_name(usr_cmd, &dentry);
   inode = (nodes_block *)(mynode + dentry.inode);
   read_data(dentry.inode, 0, buf, FHEADER_LEN);
-  
+
   // Load file into program image
   read_data(dentry.inode, 0, (uint8_t *)PROG_IMAGE_ADDR, inode->length);
 
@@ -712,7 +728,7 @@ void context_switch(uint8_t* usr_cmd)
   usr_esp = P_128M_SIZE + P_4M_SIZE - sizeof(int32_t);
 
   tss.ss0 = KERNEL_DS;
-  tss.esp0 = K_BASE - (cur_pid) * K_TASK_STACK_SIZE - sizeof(int32_t);
+  tss.esp0 = K_BASE - (cur_pid)*K_TASK_STACK_SIZE - sizeof(int32_t);
 
   sti();
   // push iret context to kernel stack
@@ -730,8 +746,6 @@ void context_switch(uint8_t* usr_cmd)
       : "memory");
 }
 
-
-
 /*
  * create_pid
  *   DESCRIPTION: Create one pid for new task
@@ -746,16 +760,15 @@ int32_t create_pid()
 {
   int pid = 0;
 
-  if(task_num == MAX_TASK_NUM)
+  if (task_num == MAX_TASK_NUM)
   {
     printf("Can't Create More Processes\n");
     return -1;
   }
-  
 
-  for(pid = 0; pid < MAX_TASK_NUM; pid++)
+  for (pid = 0; pid < MAX_TASK_NUM; pid++)
   {
-    if(running_tasks[pid] == 0)
+    if (running_tasks[pid] == 0)
     {
       running_tasks[pid] = 1;
       break;

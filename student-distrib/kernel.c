@@ -172,7 +172,6 @@ void entry(unsigned long magic, unsigned long addr) {
     
 	// Initialize terminal
 	terminal_init();
-	
 #if (ENABLE_MOUSE)
     // initialize mouse
     mouse_init();

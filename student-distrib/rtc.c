@@ -3,6 +3,7 @@
 #include "lib.h"
 #include "i8259.h"
 #include "terminal.h"
+#include "signal.h"
 
 volatile uint8_t rtc_counter;
 
@@ -50,16 +51,25 @@ int rtc_init()
 void rtc_handler()
 {
     cli();
-    termin_t* term;
+    termin_t *term;
     int i;
 
-    for(i = 0; i < MAX_TERM_NUM; i++)
+    for (i = 0; i < MAX_TERM_NUM; i++)
     {
         term = get_terminal(i);
-        if(term->invoked == 1)
-            term->rtc_counter++; 
+        if (cur_pid == term->pid)
+        {
+            pcb_t *running_pcb = get_pcb(cur_pid);
+            running_pcb->the_signal.alarm_time++;
+            if (running_pcb->the_signal.alarm_time >= 10240)
+            {
+                send_signal(3);
+                running_pcb->the_signal.alarm_time = 0;
+            }
+        }
+        if (term->invoked == 1)
+            term->rtc_counter++;
     }
-
 
     outb(0x0C, RTC_PORT);
     inb(RTC_DATA);
@@ -80,7 +90,7 @@ void rtc_handler()
 int32_t rtc_open(const uint8_t *filename)
 {
     // rtc_set_rate(MIN_FREQUENCE);
-    termin_t* running_term = get_terminal(running_tid);
+    termin_t *running_term = get_terminal(running_tid);
     running_term->rtc_freq = MIN_FREQUENCE;
     return 0;
 }
@@ -110,8 +120,9 @@ int32_t rtc_close(int32_t fd)
  */
 int32_t rtc_read(int32_t fd, void *buf, int32_t nbytes)
 {
-    termin_t* running_term = get_terminal(running_tid);
-    while (running_term->rtc_counter < (MAX_FREQUENCE / running_term->rtc_freq));
+    termin_t *running_term = get_terminal(running_tid);
+    while (running_term->rtc_counter < (MAX_FREQUENCE / running_term->rtc_freq))
+        ;
 
     running_term->rtc_counter = 0;
     return 0;
@@ -139,14 +150,13 @@ int32_t rtc_write(int32_t fd, const void *buf, int32_t nbytes)
         printf("please use power of two and smaller than 1024");
     }
     */
-    
-    termin_t* running_term = get_terminal(running_tid);
+
+    termin_t *running_term = get_terminal(running_tid);
     running_term->rtc_freq = ret_buf[0];
 
     sti();
     return 0;
 }
-
 
 /*
  *   rtc_set_rate
@@ -177,7 +187,6 @@ int32_t rtc_set_rate(int32_t frequence)
     return 0;
 }
 
-
 /* int isPowerOfTwo()
  *  Description: Checks if it is a power of two and calculate
  *  inputs: int num
@@ -203,4 +212,3 @@ int isPowerOfTwo(int num)
     }
     return i;
 }
-

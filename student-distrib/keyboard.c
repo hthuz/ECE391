@@ -79,7 +79,7 @@ void keyboard_init()
 void keyboard_handler()
 {
 	unsigned char result;
-  termin_t* cur_term = get_terminal(cur_tid);
+	termin_t *cur_term = get_terminal(cur_tid);
 
 	unsigned char c = inb(KEY_PORT);
 	// if get EXT_BYTE, read scancode
@@ -116,56 +116,52 @@ void keyboard_handler()
 	// 0x26: scancode for L
 	if (ctrl_pressed == 1 && c == 0x26)
 	{
-    handle_clear_screen();
+		handle_clear_screen();
 		send_eoi(KEY_IRQ);
 		return;
 	}
 
-  // ALT + Function-key will switch terminal
-  if (alt_pressed == 1 && c == FUNC1)
-  {
-	alt_pressed=0;
-    send_eoi(KEY_IRQ);
-    terminal_switch(0);
-    return;
-  }
-  if (alt_pressed == 1 && c == FUNC2)
-  {
-	alt_pressed=0;
-    send_eoi(KEY_IRQ);
-    terminal_switch(1);
-    return;
-  }
-  if (alt_pressed == 1 && c == FUNC3)
-  {
-	alt_pressed=0;
-    send_eoi(KEY_IRQ);
-    terminal_switch(2);
-    return;
-  }
-  if (alt_pressed == 1 && c==0x26)
-  {
-	alt_pressed=0;
-	printf("send singal");
-    send_eoi(KEY_IRQ);
-    send_signal(2);
-    return;
-  }
+	// ALT + Function-key will switch terminal
+	if (alt_pressed == 1 && c == FUNC1)
+	{
+		send_eoi(KEY_IRQ);
+		terminal_switch(0);
+		return;
+	}
+	if (alt_pressed == 1 && c == FUNC2)
+	{
+		send_eoi(KEY_IRQ);
+		terminal_switch(1);
+		return;
+	}
+	if (alt_pressed == 1 && c == FUNC3)
+	{
+		send_eoi(KEY_IRQ);
+		terminal_switch(2);
+		return;
+	}
 
+	// Ctrl + C will send USER INTERRUPT
+	if (ctrl_pressed == 1 && c == 0x2E)
+	{
+		send_eoi(KEY_IRQ);
+		send_signal(2);
+		return;
+	}
 
 	// if it is outside the scancode table, do not translate
 	if (c >= 0x3E)
 	{
-		send_eoi(KEY_IRQ); 
+		send_eoi(KEY_IRQ);
 		return;
 	}
 
-  result = translate_scancode(c);
+	result = translate_scancode(c);
 	// If get backspace
 	if (result == '\b')
 	{
-    handle_backspace();
-	  send_eoi(KEY_IRQ);
+		handle_backspace();
+		send_eoi(KEY_IRQ);
 		return;
 	}
 
@@ -174,25 +170,25 @@ void keyboard_handler()
 	if (cur_term->kb_buf_length != KB_BUF_SIZE && result != 0)
 	{
 		cur_term->kb_buf[cur_term->kb_buf_length] = result;
-	  cur_term->kb_buf_length++;
+		cur_term->kb_buf_length++;
 		putc(result);
-    if (result == '\n')
-        cur_term->enter_pressed = 1;
-    send_eoi(KEY_IRQ);
-    return;
+		if (result == '\n')
+			cur_term->enter_pressed = 1;
+		send_eoi(KEY_IRQ);
+		return;
 	}
 
-  // If kb_buf is full but still get enter
-  if (cur_term->kb_buf_length == KB_BUF_SIZE && result == '\n')
-  {
-    putc(result);
-    cur_term->enter_pressed = 1;
-  }
+	// If kb_buf is full but still get enter
+	if (cur_term->kb_buf_length == KB_BUF_SIZE && result == '\n')
+	{
+		putc(result);
+		cur_term->enter_pressed = 1;
+	}
 	send_eoi(KEY_IRQ);
 	return;
 }
 
-/* 
+/*
  * handle_clear_screen
  *   DESCRIPTION: clear the screen and clean kb_buf
  *   INPUT: none
@@ -201,12 +197,12 @@ void keyboard_handler()
  */
 void handle_clear_screen()
 {
-  	termin_t* cur_term = get_terminal(cur_tid);
+	termin_t *cur_term = get_terminal(cur_tid);
 	clear();
 	update_cursor(0, 0);
 	memset(cur_term->kb_buf, '\0', KB_BUF_SIZE);
 	cur_term->kb_buf_length = 0;
-  return;
+	return;
 }
 
 /*
@@ -218,9 +214,9 @@ void handle_clear_screen()
  */
 unsigned char translate_scancode(unsigned char c)
 {
-  unsigned char result;
+	unsigned char result;
 
-  // Combinations of shift and caps conditions
+	// Combinations of shift and caps conditions
 	// shift not pressed, caps lock off
 	if (shift_pressed == 0 && capslock_on == 0)
 		result = scancode[c];
@@ -245,7 +241,7 @@ unsigned char translate_scancode(unsigned char c)
 			result = result + CAPS_OFFSET;
 	}
 
-  return result;
+	return result;
 }
 
 /*
@@ -257,9 +253,9 @@ unsigned char translate_scancode(unsigned char c)
  */
 void handle_backspace()
 {
-  int i;
-  termin_t* cur_term = get_terminal(cur_tid);
-  unsigned char backspace = '\b';
+	int i;
+	termin_t *cur_term = get_terminal(cur_tid);
+	unsigned char backspace = '\b';
 	// only delete if buffer length is not 0
 	if (cur_term->kb_buf_length != 0)
 	{
@@ -276,7 +272,7 @@ void handle_backspace()
 		cur_term->kb_buf[cur_term->kb_buf_length - 1] = '\0';
 		cur_term->kb_buf_length--;
 	}
-  return;
+	return;
 }
 /* is_alphabet
  *   DESCRIPTION: given a scancode from keyboard, determine if it's alphabet,
@@ -300,8 +296,6 @@ int is_alphabet(unsigned char scancode)
 		return 0;
 }
 
-
-
 /* scroll_one_line
  *   DESCRIPTION: when the screen is full, screen by one line
  *   INPUTS: none
@@ -316,7 +310,6 @@ void scroll_one_line()
 	// move memory starting frow second row to first row
 	dest_mem = memmove(video_mem, (char *)(VIDEO + (NUM_COLS << 1)), VIDEO_SIZE - (NUM_COLS << 1));
 
-
 	// set video memory of last row to empty
 	int32_t i;
 	for (i = 0; i < NUM_COLS; i++)
@@ -330,25 +323,25 @@ void scroll_one_line()
 
 #if (ENALBE_MOUSE)
 	set_background_green(mouse_x, mouse_y);
-	if(mouse_y != 0){
-		set_background_black(mouse_x,mouse_y - 1 );
+	if (mouse_y != 0)
+	{
+		set_background_black(mouse_x, mouse_y - 1);
 	}
 #endif
-
 
 	return;
 }
 
 /* terminal_scroll_one_line
  *   DESCRIPTION: scroll one line function for a specific terminal
- *   INPUTS: tid -- terminal id to scroll 
+ *   INPUTS: tid -- terminal id to scroll
  *   OUTPUTS: none
  *   RETURN VALUE: none
  *   SIDE EFFECTS: will change the content of terminal's video memory
  */
 void terminal_scroll_one_line(int32_t tid)
 {
-  termin_t* term = get_terminal(tid);
+	termin_t *term = get_terminal(tid);
 	char *dest_mem;
 
 	// move memory starting frow second row to first row
@@ -367,8 +360,9 @@ void terminal_scroll_one_line(int32_t tid)
 
 #if (ENALBE_MOUSE)
 	set_background_green(mouse_x, mouse_y);
-	if(mouse_y != 0){
-		set_background_black(mouse_x,mouse_y - 1 );
+	if (mouse_y != 0)
+	{
+		set_background_black(mouse_x, mouse_y - 1);
 	}
 #endif
 

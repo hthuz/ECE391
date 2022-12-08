@@ -27,6 +27,8 @@ struct termin_t
   int rtc_freq;
   uint32_t saved_ebp;
   uint32_t saved_esp;   // Used for scheduling
+  int num_tasks;
+  int task_is_shell;
 
 };
 

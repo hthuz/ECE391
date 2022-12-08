@@ -2,6 +2,7 @@
 #include "lib.h"
 #include "x86_desc.h"
 #include "handlers.h"
+#include "signal.h"
 
 /*
  * idt_fill
@@ -59,7 +60,6 @@ void idt_fill()
     idt[SYS_CALL_VEC].present = 1;
     idt[SYS_CALL_VEC].dpl = 3;
     SET_IDT_ENTRY(idt[SYS_CALL_VEC], sys_call_linkage);
-
 }
 
 void idt_exception_init()
@@ -70,29 +70,59 @@ void idt_exception_init()
     for (i = 0; i <= 19; i++)
         idt[i].present = 1;
     // 15 is reserved for Intel
-    idt[15].present = 0; 
+    idt[15].present = 0;
 
-    SET_IDT_ENTRY(idt[0], idt_0);   // divide_error
-    SET_IDT_ENTRY(idt[1], idt_1);   // debug
-    SET_IDT_ENTRY(idt[2], idt_2);   // nmi
-    SET_IDT_ENTRY(idt[3], idt_3);   // breakpoint
-    SET_IDT_ENTRY(idt[4], idt_4);   // overflow
-    SET_IDT_ENTRY(idt[5], idt_5);   // bound_range_exceeded
-    SET_IDT_ENTRY(idt[6], idt_6);   // invalid_opcode
-    SET_IDT_ENTRY(idt[7], idt_7);   // device_not_available
-    SET_IDT_ENTRY(idt[8], idt_8);   // double_fault
-    SET_IDT_ENTRY(idt[9], idt_9);   // coprocessor_segment_overrun
-    SET_IDT_ENTRY(idt[10], idt_10); // invalid_TSS
-    SET_IDT_ENTRY(idt[11], idt_11); // segment_not_present
-    SET_IDT_ENTRY(idt[12], idt_12); // stack_segment_fault
-    SET_IDT_ENTRY(idt[13], idt_13); // general_protection_fault
-    SET_IDT_ENTRY(idt[14], idt_14); // page_fault
-    SET_IDT_ENTRY(idt[15], idt_15); // spurious_interrupt_bug
-    SET_IDT_ENTRY(idt[16], idt_16); // coprocessor_error
-    SET_IDT_ENTRY(idt[17], idt_17); // alignment_check
-    SET_IDT_ENTRY(idt[18], idt_18); // machine_check
-    SET_IDT_ENTRY(idt[19], idt_19); // simd_coprocessor_error
+    SET_IDT_ENTRY(idt[0], exp_0);                 // divide_error
+    SET_IDT_ENTRY(idt[1], exp_1);                 // debug
+    SET_IDT_ENTRY(idt[2], exp_2);                 // nmi
+    SET_IDT_ENTRY(idt[3], exp_3);                 // breakpoint
+    SET_IDT_ENTRY(idt[4], exp_4);                 // overflow
+    SET_IDT_ENTRY(idt[5], exp_5);                 // bound_range_exceeded
+    SET_IDT_ENTRY(idt[6], exp_6);                 // invalid_opcode
+    SET_IDT_ENTRY(idt[7], exp_7);                 // device_not_available
+    SET_IDT_ENTRY(idt[8], exp_8);                 // double_fault
+    SET_IDT_ENTRY(idt[9], exp_9);                 // coprocessor_segment_overrun
+    SET_IDT_ENTRY(idt[10], exp_10);               // invalid_TSS
+    SET_IDT_ENTRY(idt[11], exp_11);               // segment_not_present
+    SET_IDT_ENTRY(idt[12], exp_12);               // stack_segment_fault
+    SET_IDT_ENTRY(idt[13], exp_13);               // general_protection_fault
+    SET_IDT_ENTRY(idt[14], exp_14); // page_fault
+    SET_IDT_ENTRY(idt[15], exp_15);               // spurious_interrupt_bug
+    SET_IDT_ENTRY(idt[16], exp_16);               // coprocessor_error
+    SET_IDT_ENTRY(idt[17], exp_17);               // alignment_check
+    SET_IDT_ENTRY(idt[18], exp_18);               // machine_check
+    SET_IDT_ENTRY(idt[19], exp_19);               // simd_coprocessor_error
 }
+
+
+
+/*
+ * exception_shower
+ * DESCRIPTION: all the exception should call this function to send signal
+ * INPUTS: switch_para: the hardware context
+ * OUTPUTS: none
+ * RETURN VALUE: none
+ * SIDE EFFECT: none
+ */
+void exception_shower(switch_para hw)
+{
+    cli();
+    if (hw.irq<=20){
+        printf("\n-------------------------------\n");
+        printf("exception %d occurs\n",hw.irq);
+        printf("stored return address: 0x%x\n",hw.ret_add);
+        printf("stored esp: 0x%x\n",hw.resp);
+        printf("---------------------------------\n");
+        send_signal((hw.irq!=0));
+    }
+    else{
+        printf("\n-------------------------------\n");
+        printf("it is not an valid exception");
+        printf("---------------------------------\n");
+    }
+    sti();
+}
+
 
 /*
  * idt_0,idt1,idt2......idt_19
