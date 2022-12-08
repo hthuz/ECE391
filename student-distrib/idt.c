@@ -108,17 +108,11 @@ void exception_shower(switch_para hw)
 {
     cli();
     if (hw.irq<=20){
-        printf("\n-------------------------------\n");
-        printf("exception %d occurs\n",hw.irq);
-        printf("stored return address: 0x%x\n",hw.ret_add);
-        printf("stored esp: 0x%x\n",hw.resp);
-        printf("---------------------------------\n");
+        printf("Exception %d occurs\n",hw.irq);
         send_signal((hw.irq!=0));
     }
     else{
-        printf("\n-------------------------------\n");
-        printf("it is not an valid exception");
-        printf("---------------------------------\n");
+        printf("It is not an valid exception");
     }
     sti();
 }

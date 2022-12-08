@@ -84,7 +84,6 @@ int32_t interrupt_handler()
  */
 int32_t alarm_handler()
 {
-    printf("alarm reach\n");
     return 0;
 }
 
