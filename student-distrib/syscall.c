@@ -325,7 +325,7 @@ int32_t open(const uint8_t *filename)
     break;
   }
 
- // Sound is regular file
+  // Sound is regular file
   if(strncmp("sound",(const int8_t*)filename,6) == 0)
   {
     curr->farray[fd].optable_ptr = &sound_optable;
@@ -558,8 +558,6 @@ void optable_init()
   sound_optable.close = sound_close;
   sound_optable.read = sound_read;
   sound_optable.write = sound_write;
-
-
 }
 
 /*
