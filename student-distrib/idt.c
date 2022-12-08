@@ -3,7 +3,7 @@
 #include "x86_desc.h"
 #include "handlers.h"
 #include "signal.h"
-
+#include "mouse.h"
 /*
  * idt_fill
  * DESCRIPTION: initialize interrupt descriptor and fill them into the idt
