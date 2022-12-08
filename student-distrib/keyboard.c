@@ -124,28 +124,24 @@ void keyboard_handler()
   // ALT + Function-key will switch terminal
   if (alt_pressed == 1 && c == FUNC1)
   {
-	alt_pressed=0;
     send_eoi(KEY_IRQ);
     terminal_switch(0);
     return;
   }
   if (alt_pressed == 1 && c == FUNC2)
   {
-	alt_pressed=0;
     send_eoi(KEY_IRQ);
     terminal_switch(1);
     return;
   }
   if (alt_pressed == 1 && c == FUNC3)
   {
-	alt_pressed=0;
     send_eoi(KEY_IRQ);
     terminal_switch(2);
     return;
   }
   if (alt_pressed == 1 && c==0x26)
   {
-	alt_pressed=0;
 	printf("send singal");
     send_eoi(KEY_IRQ);
     send_signal(2);

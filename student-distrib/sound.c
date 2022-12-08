@@ -62,6 +62,7 @@ int32_t sound_write(int32_t fd, const void* buf, int32_t nbytes)
     uint32_t freq = value & 0xFF;
     uint32_t play_or_not = (value>>8) & 0xFF;
 
+    printf("play sound\n");
     if (play_or_not == 0)
     {
       if(freq != 0)

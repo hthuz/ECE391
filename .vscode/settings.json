@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "lib.h": "c",
+        "idt.h": "c",
+        "keyboard.h": "c",
+        "terminal.h": "c"
+    }
+}
