@@ -55,15 +55,16 @@ int32_t sound_read(int32_t fd, void* buf, int32_t nbytes)
 
 int32_t sound_write(int32_t fd, const void* buf, int32_t nbytes)
 {
-    if((buf ==NULL)) return FAIL;
+    if((buf == NULL)) return FAIL;
     if(nbytes != sizeof(uint32_t)) return FAIL;
 
     uint32_t value = *((uint32_t*)buf);
     uint32_t freq = value & 0xFF;
-    uint32_t play_or_not = (value>>8) & 0xFF;
+    uint32_t play_or_not = (value >> 8) & 0xFF;
 
     if (play_or_not == 0)
     {
+      if(freq != 0)
         play_sound(freq);
     }else if(play_or_not == 1){
         nosound();

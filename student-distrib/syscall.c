@@ -288,11 +288,11 @@ int32_t open(const uint8_t *filename)
     curr->farray[fd].optable_ptr = &dir_optable;
     break;
   }
-  
-  // if(strncmp("sound",filename,6) == 0)
-  // {
-  //   curr->farray[fd].optable_ptr = &sound_optable;
-  // }
+  // Sound is regular file
+  if(strncmp("sound",(const int8_t*)filename,6) == 0)
+  {
+    curr->farray[fd].optable_ptr = &sound_optable;
+  }
   curr->farray[fd].optable_ptr->open(filename);
   return fd;
 }
