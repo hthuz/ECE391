@@ -4,7 +4,7 @@
 #include "i8259.h"
 #include "lib.h"
 #include "types.h"
-#include "RTC.h"
+#include "rtc.h"
 #include "paging.h"
 
 #define FAIL  -1
@@ -19,3 +19,4 @@ extern int32_t sound_read(int32_t fd, void* buf, int32_t nbytes);
 extern int32_t sound_write(int32_t fd, const void* buf, int32_t nbytes);
  
 #endif
+

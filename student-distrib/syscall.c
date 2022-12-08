@@ -7,7 +7,11 @@
 #include "terminal.h"
 #include "rtc.h"
 #include "x86_desc.h"
+<<<<<<< HEAD
 #include "signal.h"
+=======
+#include "sound.h"
+>>>>>>> revert
 
 #define SYSCALL_FAIL -1;
 
@@ -24,7 +28,10 @@ optable_t rtc_optable;
 optable_t file_optable;
 optable_t dir_optable;
 optable_t sound_optable;
+<<<<<<< HEAD
 
+=======
+>>>>>>> revert
 
 /*
  * halt
@@ -324,11 +331,13 @@ int32_t open(const uint8_t *filename)
     curr->farray[fd].optable_ptr = &dir_optable;
     break;
   }
-    // for bonus to open sound
-  if(strncmp("sound", filename, 6)) {
-        // Trying to open Sound 
-        curr->farray[fd].optable_ptr = &sound_optable;
+
+ // Sound is regular file
+  if(strncmp("sound",(const int8_t*)filename,6) == 0)
+  {
+    curr->farray[fd].optable_ptr = &sound_optable;
   }
+
   curr->farray[fd].optable_ptr->open(filename);
   return fd;
 }
@@ -556,6 +565,11 @@ void optable_init()
   sound_optable.close = sound_close;
   sound_optable.read = sound_read;
   sound_optable.write = sound_write;
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> revert
 }
 
 /*
