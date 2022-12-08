@@ -7,11 +7,8 @@
 #include "terminal.h"
 #include "rtc.h"
 #include "x86_desc.h"
-<<<<<<< HEAD
 #include "signal.h"
-=======
 #include "sound.h"
->>>>>>> revert
 
 #define SYSCALL_FAIL -1;
 
@@ -28,10 +25,6 @@ optable_t rtc_optable;
 optable_t file_optable;
 optable_t dir_optable;
 optable_t sound_optable;
-<<<<<<< HEAD
-
-=======
->>>>>>> revert
 
 /*
  * halt
@@ -565,11 +558,8 @@ void optable_init()
   sound_optable.close = sound_close;
   sound_optable.read = sound_read;
   sound_optable.write = sound_write;
-<<<<<<< HEAD
-=======
 
 
->>>>>>> revert
 }
 
 /*
