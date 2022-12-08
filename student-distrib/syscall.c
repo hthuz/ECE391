@@ -23,6 +23,8 @@ optable_t stdout_optable;
 optable_t rtc_optable;
 optable_t file_optable;
 optable_t dir_optable;
+optable_t sound_optable;
+
 
 /*
  * halt
@@ -322,6 +324,11 @@ int32_t open(const uint8_t *filename)
     curr->farray[fd].optable_ptr = &dir_optable;
     break;
   }
+    // for bonus to open sound
+  if(strncmp("sound", filename, 6)) {
+        // Trying to open Sound 
+        curr->farray[fd].optable_ptr = &sound_optable;
+  }
   curr->farray[fd].optable_ptr->open(filename);
   return fd;
 }
@@ -544,6 +551,11 @@ void optable_init()
   dir_optable.close = directory_close;
   dir_optable.read = directory_read;
   dir_optable.write = directory_write;
+
+  sound_optable.open = sound_open;
+  sound_optable.close = sound_close;
+  sound_optable.read = sound_read;
+  sound_optable.write = sound_write;
 }
 
 /*
