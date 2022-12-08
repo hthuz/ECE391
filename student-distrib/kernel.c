@@ -188,6 +188,13 @@ void entry(unsigned long magic, unsigned long addr) {
     launch_tests();
 #endif
     /* Execute the first program ("shell") ... */
+    // printf("beep");
+    // while(1)
+    // {
+    //     beep();
+    // }
+    // printf("beep over");
+
 
 	printf("TERMINAL #%d\n",cur_tid);
 	execute((uint8_t*)"shell");

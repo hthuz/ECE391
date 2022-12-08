@@ -17,6 +17,8 @@ int main()
     playing_sound = 1<<16;
     int i;
     for(i=0;i<100000000; i++){
+        playing_sound = i;
+        playing_sound = playing_sound % 10000;
         ece391_write(fd_391_sound, &playing_sound, sizeof(uint32_t));
     }
 

@@ -26,14 +26,14 @@ void nosound(){
 	sti();
 }
 
-// void beep() {
-//     int32_t i = 0;
-//     play_sound(1000);
-//     while(i<1000){
-//         i++;
-//     }
-//     nosound();
-//  }
+void beep(uint32_t freq) {
+    int32_t i = 0;
+    play_sound(freq);
+    while(i<1000){
+        i++;
+    }
+    nosound();
+ }
 
 // default
 int32_t sound_open(const uint8_t* filename)
@@ -62,11 +62,10 @@ int32_t sound_write(int32_t fd, const void* buf, int32_t nbytes)
     uint32_t freq = value & 0xFF;
     uint32_t play_or_not = (value>>8) & 0xFF;
 
-    printf("play sound\n");
     if (play_or_not == 0)
     {
-      if(freq != 0)
-        play_sound(freq);
+        if(freq != 0)
+            beep(freq);
     }else if(play_or_not == 1){
         nosound();
     }else{
